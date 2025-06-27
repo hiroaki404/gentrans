@@ -43,3 +43,7 @@ bin/
 
 ### Mac OS ###
 .DS_Store
+
+### GitHub Instructions ###
+.github/github-instructions/
+.github/prompts/

@@ -2,7 +2,8 @@
 
 ## Prerequisites
 
-To run `gentrans`, you need to have Java installed on your system. Please ensure you have Java Development Kit (JDK) 17 or newer.
+To run `gentrans`, you need to have Java installed on your system. Please ensure you have Java Development Kit (JDK) 11
+or newer.
 
 ## Installation
 

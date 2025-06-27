@@ -1,5 +1,7 @@
 # gentrans
 
+**WIP**: This project is currently under active development.
+
 ## Prerequisites
 
 To run `gentrans`, you need to have Java installed on your system. Please ensure you have Java Development Kit (JDK) 11

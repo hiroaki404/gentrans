@@ -1,6 +1,7 @@
 plugins {
     id 'org.jetbrains.kotlin.jvm' version '2.1.21'
     id 'application'
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
 }
 
 group = 'org.example'
@@ -12,6 +13,7 @@ repositories {
 
 dependencies {
     testImplementation 'org.jetbrains.kotlin:kotlin-test'
+    implementation 'com.github.ajalt.clikt:clikt:5.0.3'
 }
 
 test {
@@ -22,11 +24,7 @@ kotlin {
 }
 
 application {
-    mainClassName = 'org.example.MainKt'
+    mainClass.set("org.example.MainKt")
 }
 
-jar {
-    manifest {
-        attributes 'Main-Class': 'org.example.MainKt'
-    }
-}
+

@@ -5,11 +5,13 @@ shadow = "8.1.1"
 clikt = "5.0.3"
 koogAgents = "0.2.1"
 buildconfig = "5.6.7"
+slf4j = "2.0.17"
 
 [libraries]
 clikt = { module = "com.github.ajalt.clikt:clikt", version.ref = "clikt" }
 koog-agents = { module = "ai.koog:koog-agents", version.ref = "koogAgents" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
+slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }

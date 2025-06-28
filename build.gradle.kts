@@ -16,6 +16,7 @@ dependencies {
     testImplementation(libs.kotlin.test)
     implementation(libs.clikt)
     implementation(libs.koog.agents)
+    implementation(libs.slf4j.simple)
 }
 
 tasks.test {
@@ -23,7 +24,7 @@ tasks.test {
 }
 
 kotlin {
-    jvmToolchain(11)
+    jvmToolchain(17)
 }
 
 buildConfig {

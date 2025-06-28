@@ -53,7 +53,7 @@ and advanced workflows.
 
 To run `gentrans`, you need to have **Java** installed on your system:
 
-- **Java Development Kit (JDK) 11** or newer
+- **Java Development Kit (JDK) 17** or newer
 
 ---
 

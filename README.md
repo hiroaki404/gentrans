@@ -51,3 +51,34 @@ To install `gentrans`, follow these steps:
    ```bash
    gentrans
    ```
+
+### ⚙️ Config Subcommand
+
+```
+USAGE:
+    gentrans config <SUBCOMMAND>
+
+SUBCOMMANDS:
+    set     Set a configuration key-value pair
+    get     Get a configuration value by key
+    list    List all settings in the config file
+    path    Show the path to the configuration file
+```
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to:
+
+- 🐛 **Report bugs** by opening an issue
+- 💡 **Suggest features** through discussions
+- 🔧 **Submit pull requests** to improve the tool
+
+Before contributing, please check our [contribution guidelines](CONTRIBUTING.md).
+
+---
+
+## 📄 License
+
+This project is licensed under the [Apache License 2.0](LICENSE).

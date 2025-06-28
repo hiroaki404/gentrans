@@ -1,7 +1,7 @@
 plugins {
-    kotlin("jvm") version "2.1.21"
+    alias(libs.plugins.kotlin.jvm)
     application
-    id("com.github.johnrengelman.shadow") version "8.1.1"
+    alias(libs.plugins.shadow)
 }
 
 group = "org.example"
@@ -12,8 +12,9 @@ repositories {
 }
 
 dependencies {
-    testImplementation(kotlin("test"))
-    implementation("com.github.ajalt.clikt:clikt:5.0.3")
+    testImplementation(libs.kotlin.test)
+    implementation(libs.clikt)
+    implementation(libs.koog.agents)
 }
 
 tasks.test {

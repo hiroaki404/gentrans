@@ -4,8 +4,12 @@ import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.main
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.arguments.optional
+import com.github.ajalt.clikt.parameters.options.versionOption
 
 class GenTransCommand : CliktCommand() {
+    init {
+        versionOption("1.0-SNAPSHOT")
+    }
     private val targetText: String? by argument(help = "Text to translate. Reads from stdin if not provided.").optional()
 
     override fun run() {

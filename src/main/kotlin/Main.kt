@@ -10,11 +10,12 @@ class GenTransCommand : CliktCommand() {
     init {
         versionOption("1.0-SNAPSHOT")
     }
+
     private val targetText: String? by argument(help = "Text to translate. Reads from stdin if not provided.").optional()
 
     override fun run() {
         val text = targetText ?: run {
-            val stdinText = generateSequence(::readlnOrNull).joinToString("\n")
+            val stdinText = readlnOrNull()
             stdinText
         }
         echo("Translating: $text")

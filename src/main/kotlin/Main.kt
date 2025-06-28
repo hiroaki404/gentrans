@@ -1,27 +1,43 @@
 package org.example
 
-import com.github.ajalt.clikt.core.CliktCommand
-import com.github.ajalt.clikt.core.main
+import ai.koog.agents.core.agent.AIAgent
+import ai.koog.prompt.executor.clients.google.GoogleModels
+import ai.koog.prompt.executor.llms.all.simpleGoogleAIExecutor
+import com.github.ajalt.clikt.command.SuspendingCliktCommand
+import com.github.ajalt.clikt.command.main
 import com.github.ajalt.clikt.parameters.arguments.argument
-import com.github.ajalt.clikt.parameters.arguments.optional
+import com.github.ajalt.clikt.parameters.arguments.multiple
 import com.github.ajalt.clikt.parameters.options.versionOption
 import org.example.gentrans.BuildConfig
 
-class GenTransCommand : CliktCommand() {
+class GenTransCommand : SuspendingCliktCommand() {
     init {
         versionOption(BuildConfig.VERSION)
     }
 
-    private val targetText: String? by argument(help = "Text to translate. Reads from stdin if not provided.").optional()
+    private val targetText: List<String> by argument(help = "Text to translate. Reads from stdin if not provided.").multiple()
 
-    override fun run() {
-        val text = targetText ?: run {
-            val stdinText = readlnOrNull()
-            stdinText
+    override suspend fun run() {
+        val text = if (targetText.isNotEmpty()) {
+            targetText.joinToString("\n")
+        } else {
+            generateSequence(::readlnOrNull).joinToString("\n")
         }
-        echo("Translating: $text")
-        // Here you would add the actual translation logic
+
+        val apiKey = System.getenv("GOOGLE_API_KEY")
+        val executor = simpleGoogleAIExecutor(apiKey)
+        val agent = AIAgent(
+            executor = executor,
+            llmModel = GoogleModels.Gemini2_0Flash
+        )
+        val prompt = """
+            Translate the following text into English.
+            - Return only the translated text.
+            - If the text is already in English, return the original text.
+        """.trimIndent()
+        val result = agent.runAndGetResult("$prompt:\n$text")
+        echo(result)
     }
 }
 
-fun main(args: Array<String>) = GenTransCommand().main(args)
+suspend fun main(args: Array<String>) = GenTransCommand().main(args)

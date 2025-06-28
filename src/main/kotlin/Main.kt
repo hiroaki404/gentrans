@@ -2,19 +2,26 @@ package org.example
 
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.main
-import com.github.ajalt.clikt.parameters.options.default
-import com.github.ajalt.clikt.parameters.options.option
-import com.github.ajalt.clikt.parameters.types.int
+import com.github.ajalt.clikt.parameters.arguments.argument
+import com.github.ajalt.clikt.parameters.arguments.optional
+import com.github.ajalt.clikt.parameters.options.versionOption
+import org.example.gentrans.BuildConfig
 
-class Hello : CliktCommand() {
-    private val count: Int by option(help = "Number of greetings").int().default(1)
-    private val name: String by option(help = "The name to greet").default("World")
+class GenTransCommand : CliktCommand() {
+    init {
+        versionOption(BuildConfig.VERSION)
+    }
+
+    private val targetText: String? by argument(help = "Text to translate. Reads from stdin if not provided.").optional()
 
     override fun run() {
-        for (i in 1..count) {
-            echo("Hello $name!")
+        val text = targetText ?: run {
+            val stdinText = readlnOrNull()
+            stdinText
         }
+        echo("Translating: $text")
+        // Here you would add the actual translation logic
     }
 }
 
-fun main(args: Array<String>) = Hello().main(args)
+fun main(args: Array<String>) = GenTransCommand().main(args)

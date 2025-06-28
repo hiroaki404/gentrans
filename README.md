@@ -3,7 +3,9 @@
 **An AI-powered translation tool on your command line.**
 
 [//]: # "[![Release](https://img.shields.io/github/v/release/hiroaki404/gentrans?style=flat-square)](https://github.com/hiroaki404/gentrans/releases)"
+
 [//]: # "[![License](https://img.shields.io/github/license/hiroaki404/gentrans?style=flat-square)](LICENSE)"
+
 [//]: # "[![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-blue?style=flat-square)](#installation)"
 
 ---
@@ -17,15 +19,15 @@
 
 ## 📋 Table of Contents
 
-- [About](#about)
-- [Features](#features)
-- [Prerequisites](#prerequisites)
-- [Installation](#installation)
-- [Usage](#usage-wip)
-- [Configuration](#configuration-wip)
-- [Command Reference](#command-reference)
-- [Contributing](#contributing)
-- [License](#license)
+- [About](#-about)
+- [Features](#-features)
+- [Prerequisites](#-prerequisites)
+- [Installation](#-installation)
+- [Usage](#-usage-wip)
+- [Configuration](#-configuration-wip)
+- [Command Reference](#-command-reference)
+- [Contributing](#-contributing)
+- [License](#-license)
 
 ---
 
@@ -210,7 +212,7 @@ default_style = "casual"
 Override settings from the config file using environment variables:
 
 | Variable               | Description                  | Status             |
-| ---------------------- | ---------------------------- | ------------------ |
+|------------------------|------------------------------|--------------------|
 | `GENTRANS_API_KEY`     | Your API key                 | 🚧 Not implemented |
 | `GENTRANS_PROVIDER`    | AI provider (openai, gemini) | 🚧 Not implemented |
 | `GENTRANS_MODEL`       | AI model to use              | 🚧 Not implemented |

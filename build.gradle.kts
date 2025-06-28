@@ -2,10 +2,11 @@ plugins {
     alias(libs.plugins.kotlin.jvm)
     application
     alias(libs.plugins.shadow)
+    alias(libs.plugins.buildconfig)
 }
 
 group = "org.example"
-version = "1.0-SNAPSHOT"
+version = libs.versions.appVersion.get()
 
 repositories {
     mavenCentral()
@@ -20,8 +21,13 @@ dependencies {
 tasks.test {
     useJUnitPlatform()
 }
+
 kotlin {
     jvmToolchain(11)
+}
+
+buildConfig {
+    buildConfigField("String", "VERSION", "\"${version}\"")
 }
 
 application {

@@ -14,6 +14,8 @@ repositories {
 
 dependencies {
     testImplementation(libs.kotlin.test)
+    testImplementation(libs.kotest.runner.junit5)
+    testImplementation(libs.kotest.assertions.core)
     implementation(libs.clikt)
     implementation(libs.koog.agents)
     implementation(libs.slf4j.simple)

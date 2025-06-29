@@ -3,6 +3,7 @@ package org.example
 import ai.koog.agents.core.agent.AIAgent
 import ai.koog.prompt.executor.clients.google.GoogleModels
 import ai.koog.prompt.executor.llms.all.simpleGoogleAIExecutor
+import ai.koog.prompt.executor.model.PromptExecutor
 import com.github.ajalt.clikt.command.SuspendingCliktCommand
 import com.github.ajalt.clikt.command.main
 import com.github.ajalt.clikt.parameters.arguments.argument
@@ -10,7 +11,9 @@ import com.github.ajalt.clikt.parameters.arguments.multiple
 import com.github.ajalt.clikt.parameters.options.versionOption
 import org.example.gentrans.BuildConfig
 
-class GenTransCommand : SuspendingCliktCommand() {
+class GenTransCommand(
+    private val executor: PromptExecutor = simpleGoogleAIExecutor(System.getenv("GOOGLE_API_KEY"))
+) : SuspendingCliktCommand() {
     init {
         versionOption(BuildConfig.VERSION)
     }
@@ -24,8 +27,6 @@ class GenTransCommand : SuspendingCliktCommand() {
             generateSequence(::readlnOrNull).joinToString("\n")
         }
 
-        val apiKey = System.getenv("GOOGLE_API_KEY")
-        val executor = simpleGoogleAIExecutor(apiKey)
         val agent = AIAgent(
             executor = executor,
             llmModel = GoogleModels.Gemini2_0Flash

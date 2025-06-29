@@ -11,6 +11,7 @@ kotest = "5.9.1"
 [libraries]
 clikt = { module = "com.github.ajalt.clikt:clikt", version.ref = "clikt" }
 koog-agents = { module = "ai.koog:koog-agents", version.ref = "koogAgents" }
+koog-agents-test = { module = "ai.koog:agents-test", version.ref = "koogAgents" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
 kotest-runner-junit5 = { module = "io.kotest:kotest-runner-junit5-jvm", version.ref = "kotest" }

@@ -17,7 +17,6 @@ dependencies {
     testImplementation(libs.kotest.runner.junit5)
     testImplementation(libs.kotest.assertions.core)
     testImplementation(libs.koog.agents.test)
-    testImplementation(libs.clikt)
     implementation(libs.clikt)
     implementation(libs.koog.agents)
     implementation(libs.slf4j.simple)

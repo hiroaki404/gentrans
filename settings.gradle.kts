@@ -11,3 +11,5 @@ plugins {
 }
 include(":app")
 rootProject.name = "gentrans"
+
+include("gentrans-core")

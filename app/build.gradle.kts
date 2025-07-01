@@ -13,6 +13,7 @@ repositories {
 }
 
 dependencies {
+    implementation(projects.gentransCore)
     testImplementation(libs.kotlin.test)
     testImplementation(libs.kotest.runner.junit5)
     testImplementation(libs.kotest.assertions.core)

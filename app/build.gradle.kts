@@ -1,5 +1,5 @@
 plugins {
-    alias(libs.plugins.kotlin.jvm)
+    id("buildsrc.convention.kotlin-jvm")
     application
     alias(libs.plugins.shadow)
     alias(libs.plugins.buildconfig)
@@ -26,10 +26,6 @@ tasks.test {
     useJUnitPlatform()
 }
 
-kotlin {
-    jvmToolchain(17)
-}
-
 buildConfig {
     buildConfigField("String", "VERSION", "\"${version}\"")
 }
@@ -37,3 +33,4 @@ buildConfig {
 application {
     mainClass.set("org.example.MainKt")
 }
+

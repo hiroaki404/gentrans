@@ -9,6 +9,7 @@ slf4j = "2.0.17"
 kotest = "5.9.1"
 
 [libraries]
+kotlinGradlePlugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 clikt = { module = "com.github.ajalt.clikt:clikt", version.ref = "clikt" }
 koog-agents = { module = "ai.koog:koog-agents", version.ref = "koogAgents" }
 koog-agents-test = { module = "ai.koog:agents-test", version.ref = "koogAgents" }

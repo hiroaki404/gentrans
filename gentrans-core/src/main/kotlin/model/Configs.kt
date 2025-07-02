@@ -1,4 +1,4 @@
-package data
+package model
 
 sealed interface Configs {
     val llmModelKey: String

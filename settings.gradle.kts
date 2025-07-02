@@ -9,7 +9,9 @@ dependencyResolutionManagement {
 plugins {
     id("org.gradle.toolchains.foojay-resolver-convention") version "0.8.0"
 }
-include(":app")
-rootProject.name = "gentrans"
 
-include("gentrans-core")
+enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
+
+rootProject.name = "gentrans"
+include(":app")
+include(":gentrans-core")

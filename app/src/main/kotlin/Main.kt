@@ -1,6 +1,7 @@
 package org.example
 
 import ai.koog.agents.core.agent.AIAgent
+import ai.koog.prompt.executor.clients.anthropic.AnthropicModels
 import ai.koog.prompt.executor.clients.google.GoogleModels
 import ai.koog.prompt.executor.llms.all.simpleGoogleAIExecutor
 import ai.koog.prompt.executor.model.PromptExecutor
@@ -31,6 +32,7 @@ class GenTransCommand(
             executor = executor,
             llmModel = GoogleModels.Gemini2_0Flash
         )
+        AnthropicModels.Sonnet_4
         val prompt = """
             Translate the following text into English.
             - Return only the translated text.

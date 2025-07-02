@@ -14,3 +14,8 @@ data class LocalConfigs(
     override val llmModelKey: String,
     override val providerKey: String,
 ) : Configs
+
+data class OptionConfigs(
+    override val llmModelKey: String,
+    override val providerKey: String,
+) : Configs

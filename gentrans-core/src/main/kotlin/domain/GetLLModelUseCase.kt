@@ -16,27 +16,23 @@ class GetLLModelUseCase(
             llmModelKey = llModelOption,
             providerKey = providerOption
         )
+        val localConfigs = localConfigDataSource.getConfigs()
+        val envConfigs = envConfigDataSource.getConfigs()
         val defaultConfigs = DefaultConfigs()
 
-        // Option configurations have the highest priority
-        if (llModelOption != null && providerOption != null) {
-            return getLLModel(optionConfigs.llmModelKey!!, optionConfigs.providerKey!!)
-        }
+        // Determine the final llmModelKey with priority: option > local > env > default
+        val finalLlmModelKey = optionConfigs.llmModelKey
+            ?: localConfigs.llmModelKey
+            ?: envConfigs.llmModelKey
+            ?: defaultConfigs.llmModelKey
 
-        // Local configurations have the next priority
-        val localConfigs = localConfigDataSource.getConfigs()
-        if (localConfigs.llmModelKey != null && localConfigs.providerKey != null) {
-            return getLLModel(localConfigs.llmModelKey!!, localConfigs.providerKey!!)
-        }
+        // Determine the final providerKey with priority: option > local > env > default
+        val finalProviderKey = optionConfigs.providerKey
+            ?: localConfigs.providerKey
+            ?: envConfigs.providerKey
+            ?: defaultConfigs.providerKey
 
-        // Environment configurations have the next priority
-        val envConfigs = envConfigDataSource.getConfigs()
-        if (envConfigs.llmModelKey != null && envConfigs.providerKey != null) {
-            return getLLModel(envConfigs.llmModelKey!!, envConfigs.providerKey!!)
-        }
-
-        // If no configurations are provided, use default values
-        return getLLModel(defaultConfigs.llmModelKey, defaultConfigs.providerKey)
+        return getLLModel(finalLlmModelKey, finalProviderKey)
     }
 }
 

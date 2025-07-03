@@ -13,5 +13,4 @@ plugins {
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 rootProject.name = "gentrans"
-include(":app")
 include(":gentrans-core")

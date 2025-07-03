@@ -11,7 +11,7 @@ import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.versionOption
 import domain.GetExecutorUseCase
 import domain.GetLLModelUseCase
-import org.example.app.BuildConfig
+import org.example.gentrans.BuildConfig
 
 class GenTransCommand(
     private val getExecutor: (providerOption: String?, apikey: String?) -> PromptExecutor = { providerOption, apikey ->

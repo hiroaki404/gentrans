@@ -1,9 +1,9 @@
 package domain
 
-import ai.koog.prompt.executor.llms.all.simpleAnthropicExecutor
-import ai.koog.prompt.executor.llms.all.simpleGoogleAIExecutor
-import ai.koog.prompt.executor.llms.all.simpleOpenAIExecutor
-import ai.koog.prompt.executor.model.PromptExecutor
+import ai.koog.prompt.executor.clients.LLMClient
+import ai.koog.prompt.executor.clients.anthropic.AnthropicLLMClient
+import ai.koog.prompt.executor.clients.google.GoogleLLMClient
+import ai.koog.prompt.executor.clients.openai.OpenAILLMClient
 import data.ConfigDataSource
 import model.DefaultConfigs
 import model.OptionConfigs
@@ -12,7 +12,7 @@ class GetExecutorUseCase(
     private val envConfigDataSource: ConfigDataSource,
     private val localConfigDataSource: ConfigDataSource
 ) {
-    operator fun invoke(providerOption: String?, apiKey: String?): PromptExecutor {
+    operator fun invoke(providerOption: String?, apiKey: String?): LLMClient {
         val optionConfigs = OptionConfigs(
             providerKey = providerOption,
             apiKey = apiKey
@@ -37,11 +37,17 @@ class GetExecutorUseCase(
     }
 }
 
-private fun getExecutor(providerName: String, apiKey: String?): PromptExecutor {
+private fun getExecutor(providerName: String, apiKey: String?): LLMClient {
+    val finalApiKey = apiKey
+        ?: throw IllegalArgumentException("${providerName.replaceFirstChar { it.uppercase() }} API key is required")
+
     return when (providerName) {
-        "google" -> simpleGoogleAIExecutor(apiKey ?: throw IllegalArgumentException("Google API key is required"))
-        "openai" -> simpleOpenAIExecutor(apiKey ?: throw IllegalArgumentException("OpenAI API key is required"))
-        "anthropic" -> simpleAnthropicExecutor(apiKey ?: throw IllegalArgumentException("Anthropic API key is required"))
+        "google" -> GoogleLLMClient(apiKey = finalApiKey)
+
+        "openai" -> OpenAILLMClient(apiKey = finalApiKey)
+
+        "anthropic" -> AnthropicLLMClient(apiKey = finalApiKey)
+
         else -> throw IllegalArgumentException("Unknown provider: $providerName")
     }
 }

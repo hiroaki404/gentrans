@@ -1,6 +1,9 @@
 package domain
 
-import ai.koog.prompt.executor.model.PromptExecutor
+import ai.koog.prompt.executor.clients.LLMClient
+import ai.koog.prompt.executor.clients.anthropic.AnthropicLLMClient
+import ai.koog.prompt.executor.clients.google.GoogleLLMClient
+import ai.koog.prompt.executor.clients.openai.OpenAILLMClient
 import data.FakeConfigDataSource
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
@@ -23,8 +26,8 @@ class GetExecutorUseCaseTest : FunSpec({
             localConfigDataSource = localConfigDataSource
         )
 
-        val executor = useCase(providerOption = "anthropic", apiKey = "option-anthropic-key")
-        executor.shouldBeInstanceOf<PromptExecutor>()
+        val client = useCase(providerOption = "anthropic", apiKey = "option-anthropic-key")
+        client.shouldBeInstanceOf<AnthropicLLMClient>()
     }
 
     context("when option configs are null, local configs should take precedence") {
@@ -39,8 +42,8 @@ class GetExecutorUseCaseTest : FunSpec({
             localConfigDataSource = localConfigDataSource
         )
 
-        val executor = useCase(providerOption = null, apiKey = null)
-        executor.shouldBeInstanceOf<PromptExecutor>()
+        val client = useCase(providerOption = null, apiKey = null)
+        client.shouldBeInstanceOf<OpenAILLMClient>()
     }
 
     context("when option and local configs are not provided, env configs should take precedence") {
@@ -53,8 +56,8 @@ class GetExecutorUseCaseTest : FunSpec({
             localConfigDataSource = localConfigDataSource
         )
 
-        val executor = useCase(providerOption = null, apiKey = null)
-        executor.shouldBeInstanceOf<PromptExecutor>()
+        val client = useCase(providerOption = null, apiKey = null)
+        client.shouldBeInstanceOf<GoogleLLMClient>()
     }
 
     context("when no specific configs are provided, default configs should be used") {
@@ -67,7 +70,7 @@ class GetExecutorUseCaseTest : FunSpec({
 
         shouldThrow<IllegalArgumentException> {
             useCase(providerOption = null, apiKey = null)
-        }.message shouldBe "OpenAI API key is required"
+        }.message shouldBe "Openai API key is required"
     }
 
     context("when env and local configs have providerKey and option has apiKey, local providerKey and option apiKey should be used") {
@@ -82,8 +85,8 @@ class GetExecutorUseCaseTest : FunSpec({
             localConfigDataSource = localConfigDataSource
         )
 
-        val executor = useCase(providerOption = null, apiKey = "option-openai-key")
-        executor.shouldBeInstanceOf<PromptExecutor>()
+        val client = useCase(providerOption = null, apiKey = "option-openai-key")
+        client.shouldBeInstanceOf<OpenAILLMClient>()
     }
 
     context("when env config has only apiKey and local config has only providerKey, both should be used") {
@@ -98,8 +101,8 @@ class GetExecutorUseCaseTest : FunSpec({
             localConfigDataSource = localConfigDataSource
         )
 
-        val executor = useCase(providerOption = null, apiKey = null)
-        executor.shouldBeInstanceOf<PromptExecutor>()
+        val client = useCase(providerOption = null, apiKey = null)
+        client.shouldBeInstanceOf<LLMClient>()
     }
 
     context("when local config has only apiKey and env config has only providerKey, both should be used") {
@@ -114,8 +117,8 @@ class GetExecutorUseCaseTest : FunSpec({
             localConfigDataSource = localConfigDataSource
         )
 
-        val executor = useCase(providerOption = null, apiKey = null)
-        executor.shouldBeInstanceOf<PromptExecutor>()
+        val client = useCase(providerOption = null, apiKey = null)
+        client.shouldBeInstanceOf<AnthropicLLMClient>()
     }
 
     context("when option has only providerKey and local config has only apiKey, both should be used") {
@@ -130,8 +133,8 @@ class GetExecutorUseCaseTest : FunSpec({
             localConfigDataSource = localConfigDataSource
         )
 
-        val executor = useCase(providerOption = "openai", apiKey = null)
-        executor.shouldBeInstanceOf<PromptExecutor>()
+        val client = useCase(providerOption = "openai", apiKey = null)
+        client.shouldBeInstanceOf<LLMClient>()
     }
 
     context("when unknown provider is provided, should throw IllegalArgumentException") {

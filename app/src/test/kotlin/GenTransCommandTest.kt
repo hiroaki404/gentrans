@@ -11,7 +11,7 @@ class GenTransCommandTest : StringSpec({
     }
 
     "test GenTransCommand with argument" {
-        val command = GenTransCommand(mockLLMApi)
+        val command = GenTransCommand({ _, _ -> mockLLMApi })
         val result = command.test(argv = "こんにちは世界")
 
         result.stdout shouldBe "Hello World!\n"
@@ -19,7 +19,7 @@ class GenTransCommandTest : StringSpec({
     }
 
     "test GenTransCommand with stdin" {
-        val command = GenTransCommand(mockLLMApi)
+        val command = GenTransCommand({ _, _ -> mockLLMApi })
         System.setIn("こんにちは世界\n".byteInputStream())
         val result = command.test(argv = "")
 

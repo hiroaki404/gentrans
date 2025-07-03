@@ -5,14 +5,16 @@ import ai.koog.prompt.executor.clients.anthropic.AnthropicLLMClient
 import ai.koog.prompt.executor.clients.google.GoogleLLMClient
 import ai.koog.prompt.executor.clients.openai.OpenAILLMClient
 import data.ConfigDataSource
+import data.EnvConfigDataSource
+import data.LocalConfigDataSource
 import model.DefaultConfigs
 import model.EnvConfigs
 import model.LocalConfigs
 import model.OptionConfigs
 
 class GetExecutorUseCase(
-    private val envConfigDataSource: ConfigDataSource,
-    private val localConfigDataSource: ConfigDataSource
+    private val envConfigDataSource: ConfigDataSource = EnvConfigDataSource(),
+    private val localConfigDataSource: ConfigDataSource = LocalConfigDataSource()
 ) {
     operator fun invoke(providerOption: String?, apiKey: String?): LLMClient {
         val optionConfigs = OptionConfigs(

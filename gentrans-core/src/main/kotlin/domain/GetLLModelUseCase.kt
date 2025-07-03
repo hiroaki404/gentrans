@@ -4,12 +4,14 @@ import ai.koog.prompt.llm.LLMCapability
 import ai.koog.prompt.llm.LLMProvider
 import ai.koog.prompt.llm.LLModel
 import data.ConfigDataSource
+import data.EnvConfigDataSource
+import data.LocalConfigDataSource
 import model.DefaultConfigs
 import model.OptionConfigs
 
 class GetLLModelUseCase(
-    private val envConfigDataSource: ConfigDataSource,
-    private val localConfigDataSource: ConfigDataSource
+    private val envConfigDataSource: ConfigDataSource = EnvConfigDataSource(),
+    private val localConfigDataSource: ConfigDataSource = LocalConfigDataSource()
 ) {
     operator fun invoke(llModelOption: String?, providerOption: String?): LLModel {
         val optionConfigs = OptionConfigs(

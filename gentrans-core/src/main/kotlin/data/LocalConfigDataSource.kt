@@ -1,9 +1,10 @@
 package data
 
 import model.Configs
+import model.LocalConfigs
 
 class LocalConfigDataSource : ConfigDataSource {
     override fun getConfigs(): Configs {
-        TODO("Not yet implemented")
+        return LocalConfigs(providerKey = null, apiKey = null)
     }
 }

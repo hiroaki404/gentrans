@@ -6,6 +6,8 @@ import ai.koog.prompt.executor.clients.google.GoogleLLMClient
 import ai.koog.prompt.executor.clients.openai.OpenAILLMClient
 import data.ConfigDataSource
 import model.DefaultConfigs
+import model.EnvConfigs
+import model.LocalConfigs
 import model.OptionConfigs
 
 class GetExecutorUseCase(
@@ -17,8 +19,8 @@ class GetExecutorUseCase(
             providerKey = providerOption,
             apiKey = apiKey
         )
-        val localConfigs = localConfigDataSource.getConfigs()
-        val envConfigs = envConfigDataSource.getConfigs()
+        val localConfigs = localConfigDataSource.getConfigs() as LocalConfigs
+        val envConfigs = envConfigDataSource.getConfigs() as EnvConfigs
         val defaultConfigs = DefaultConfigs()
 
         // Determine the final providerKey with priority: option > local > env > default
@@ -31,7 +33,6 @@ class GetExecutorUseCase(
         val finalApiKey = optionConfigs.apiKey
             ?: localConfigs.apiKey
             ?: envConfigs.apiKey
-            ?: defaultConfigs.apiKey
 
         return getExecutor(finalProviderKey, finalApiKey)
     }

@@ -43,9 +43,7 @@ private fun getLLModel(llModelName: String, providerName: String): LLModel {
         provider = getProvider(providerName),
         id = llModelName,
         capabilities = listOf(
-            LLMCapability.Temperature,
-            LLMCapability.Schema.JSON.Simple,
-            LLMCapability.Tools
+            LLMCapability.Completion,
         ),
     )
 }

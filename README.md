@@ -43,6 +43,7 @@ translation directly in your terminal.
 - **Pipe Support** - Read text from standard input (stdin) to work seamlessly with pipes (`|`).
 - **Multiple AI Providers** - Support for multiple AI providers (e.g., OpenAI, Gemini).
 - **Model Selection** - Select specific models for translation.
+- **Environment Variable Support** - Configure API keys and settings via environment variables.
 
 ---
 
@@ -155,7 +156,9 @@ $ gentrans --provider openai --model gpt-4 "こんにちは"
 
 ## Configuration
 
-Configuration is currently done via command-line flags and environment variables.
+Configuration can be done via command-line flags and environment variables.
+
+**Note:** Currently, `gentrans` does not support registering and switching between multiple providers or models. You can only use one provider and model configuration at a time.
 
 ### Command-line flags:
 
@@ -168,6 +171,19 @@ Configuration is currently done via command-line flags and environment variables
 - `GENTRANS_API_KEY`: Your secret API Key for the translation service.
 - `GENTRANS_PROVIDER`: AI Provider to use (e.g., `openai`, `gemini`).
 - `GENTRANS_MODEL`: AI model to use (e.g., `gpt-4`, `gemini-pro`).
+
+### Usage Examples:
+
+```bash
+# Using environment variables
+export GENTRANS_API_KEY="your-api-key-here"
+export GENTRANS_PROVIDER="openai"
+export GENTRANS_MODEL="gpt-4"
+gentrans "こんにちは世界"
+
+# Using command-line flags (overrides environment variables)
+gentrans --apikey "your-api-key" --provider "gemini" --model "gemini-pro" "こんにちは世界"
+```
 
 ---
 
@@ -199,8 +215,8 @@ The following features are planned but not yet implemented:
 
 - **Flexible Configuration System:**
   - Configuration via a file (`~/.config/gentrans/config.toml`).
-  - Configuration via environment variables (`GENTRANS_API_KEY`, `GENTRANS_PROVIDER`, `GENTRANS_MODEL`).
   - A clear precedence order for settings (flags > env vars > config file).
+  - Multiple provider/model profiles with easy switching.
 - **Advanced Translation Options:**
   - `-t`, `--to`: Specify the target language.
   - `-f`, `--from`: Specify the source language.

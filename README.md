@@ -3,7 +3,9 @@
 **An AI-powered translation tool on your command line.**
 
 [//]: # "[![Release](https://img.shields.io/github/v/release/hiroaki404/gentrans?style=flat-square)](https://github.com/hiroaki404/gentrans/releases)"
+
 [//]: # "[![License](https://img.shields.io/github/license/hiroaki404/gentrans?style=flat-square)](LICENSE)"
+
 [//]: # "[![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-blue?style=flat-square)](#installation)"
 
 ---
@@ -57,47 +59,19 @@ To run `gentrans`, you need to have **Java** installed on your system:
 
 ## 📦 Installation
 
-### 🔽 Download Release
+1. **Download and Extract**
+   Download the latest release from the [GitHub Releases](https://github.com/hiroaki404/gentrans/releases) page and
+   extract it.
 
-1. **Download the Release**
+2. **Add to PATH**
+   Add the `bin` directory from the extracted folder to your system's PATH to make `gentrans` accessible from any
+   terminal.
 
-   Download `gentrans-1.0-SNAPSHOT.zip` from the [GitHub Releases](https://github.com/hiroaki404/gentrans/releases)
-   page.
-
-2. **Extract the Archive**
-
-   Extract the contents to your desired location.
-
-3. **Test the Installation**
-
-   Navigate to the extracted directory and run:
-
+3. **Verify Installation**
+   Run the following command to ensure it's installed correctly:
    ```bash
-   ./gentrans --version
+   gentrans --version
    ```
-
-### 🔧 Add to PATH
-
-To run `gentrans` from any directory, add it to your system's PATH:
-
-#### 🐧 **Linux/macOS**
-
-```bash
-# Add to your shell configuration file (~/.bashrc, ~/.zshrc, etc.)
-export PATH="/path/to/gentrans/bin:$PATH"
-
-# Apply changes
-source ~/.bashrc  # or ~/.zshrc
-```
-
-#### 🪟 **Windows**
-
-1. Search for "Environment Variables" in the Start menu
-2. Select "Edit the system environment variables"
-3. Click "Environment Variables..."
-4. Find "Path" variable and click "Edit..."
-5. Click "New" and add the path to `gentrans\bin` directory
-6. Click "OK" to save
 
 ### 🛠️ Build from Source
 
@@ -146,10 +120,10 @@ You can specify the AI provider and model to use for translation.
 
 ```bash
 # Use Gemini
-$ gentrans --provider gemini "こんにちは"
+$ gentrans --provider google "こんにちは"
 
 # Use a specific OpenAI model
-$ gentrans --provider openai --model gpt-4 "こんにちは"
+$ gentrans --provider openai --model gpt-4o "こんにちは"
 ```
 
 ---
@@ -158,23 +132,37 @@ $ gentrans --provider openai --model gpt-4 "こんにちは"
 
 Configuration can be done via command-line flags and environment variables.
 
+Configuration settings are prioritized in the following order:
+
+1. **Command-line flags** (highest priority)
+2. **Environment variables**
+
+This means that any setting provided as a command-line flag will override the corresponding environment variable.
+
 If the provider or model is not specified, the following default values will be used:
+
 - **Default Provider**: `openai`
 - **Default Model**: `gpt-4o`
 
-**Note:** Currently, `gentrans` does not support registering and switching between multiple providers or models. You can only use one provider and model configuration at a time.
+**Note:** Currently, `gentrans` does not support registering and switching between multiple providers or models. You can
+only use one provider and model configuration at a time.
 
 ### Command-line flags:
 
 - `--apikey`: Your secret API Key for the translation service.
-- `--provider`: AI Provider to use. Supported providers are `google`, `openai`, `anthropic`, `meta`, `alibaba`, `openrouter`, and `ollama`.
-- `--model`: AI model to use. This tool relies on the [Koog](https://github.com/JetBrains/koog) library, so only models supported by Koog can be used. For a detailed list, please refer to the official Koog documentation (e.g., [GoogleModels.kt](https://github.com/JetBrains/koog/blob/develop/prompt/prompt-executor/prompt-executor-clients/prompt-executor-google-client/src/commonMain/kotlin/ai/koog/prompt/executor/clients/google/GoogleModels.kt)). Representative models include `gemini-2.0-flash`, `gpt-4o`, `o3`, `gpt-4o-mini`, `claude-3-opus`, `claude-sonnet-4-0`, and `llama3.2:3b`.
+- `--provider`: AI Provider to use. Supported providers are `google`, `openai`, `anthropic`, `meta`, `alibaba`,
+  `openrouter`, and `ollama`.
+- `--model`: AI model to use. This tool relies on the [Koog](https://github.com/JetBrains/koog) library, so only models
+  supported by Koog can be used. For a detailed list, please refer to the official Koog documentation (
+  e.g., [GoogleModels.kt](https://github.com/JetBrains/koog/blob/develop/prompt/prompt-executor/prompt-executor-clients/prompt-executor-google-client/src/commonMain/kotlin/ai/koog/prompt/executor/clients/google/GoogleModels.kt)).
+  Representative models include `gemini-2.0-flash`, `gpt-4o`, `o3`, `gpt-4o-mini`, `claude-3-opus`, `claude-sonnet-4-0`,
+  and `llama3.2:3b`.
 
 ### Environment variables:
 
 - `GENTRANS_API_KEY`: Your secret API Key for the translation service.
-- `GENTRANS_PROVIDER`: AI Provider to use (e.g., `openai`, `gemini`).
-- `GENTRANS_MODEL`: AI model to use (e.g., `gpt-4`, `gemini-pro`).
+- `GENTRANS_PROVIDER`: AI Provider to use (e.g., `openai`, `google`).
+- `GENTRANS_MODEL`: AI model to use (e.g., `gpt-4o`, `gemini-2.0-flash`).
 
 ### Usage Examples:
 
@@ -182,11 +170,11 @@ If the provider or model is not specified, the following default values will be 
 # Using environment variables
 export GENTRANS_API_KEY="your-api-key-here"
 export GENTRANS_PROVIDER="openai"
-export GENTRANS_MODEL="gpt-4"
+export GENTRANS_MODEL="gpt-4o"
 gentrans "こんにちは世界"
 
 # Using command-line flags (overrides environment variables)
-gentrans --apikey "your-api-key" --provider "gemini" --model "gemini-pro" "こんにちは世界"
+gentrans --apikey "your-api-key" --provider "gemini" --model "gemini-2.0-flash" "こんにちは世界"
 ```
 
 ---
@@ -218,15 +206,14 @@ OPTIONS:
 The following features are planned but not yet implemented:
 
 - **Flexible Configuration System:**
-  - Configuration via a file (`~/.config/gentrans/config.toml`).
-  - A clear precedence order for settings (flags > env vars > config file).
-  - Multiple provider/model profiles with easy switching.
+    - Configuration via a file (`~/.config/gentrans/config.toml`).
+    - Multiple provider/model profiles with easy switching.
 - **Advanced Translation Options:**
-  - `-t`, `--to`: Specify the target language.
-  - `-f`, `--from`: Specify the source language.
-  - `-s`, `--style`: Define the translation style (e.g., `formal`, `casual`).
+    - `-t`, `--to`: Specify the target language.
+    - `-f`, `--from`: Specify the source language.
+    - `-s`, `--style`: Define the translation style (e.g., `formal`, `casual`).
 - **`config` Subcommand:**
-  - A dedicated command (`gentrans config`) to easily manage settings (`set`, `get`, `list`, `path`).
+    - A dedicated command (`gentrans config`) to easily manage settings (`set`, `get`, `list`, `path`).
 
 ---
 
@@ -244,13 +231,19 @@ Before contributing, please check our [contribution guidelines](CONTRIBUTING.md)
 
 ## 📜 Disclaimer
 
-- **API Keys**: You are responsible for managing your own API keys. This tool does not store or transmit your keys to any third party other than the selected AI provider. Please be aware of the security risks when passing API keys as command-line arguments or setting them as environment variables.
-- **Translation Quality**: The quality of translations depends on the AI provider and model. We are not responsible for any inaccuracies or errors in the translated text.
-- **Usage Costs**: Use of AI provider APIs may incur costs. You are responsible for all costs associated with your use of the APIs.
-- **No Warranty**: This tool is provided "as is" without any warranties. The developer is not responsible for any damage or loss resulting from the use of this tool.
+- **API Keys**: You are responsible for managing your own API keys. This tool does not store or transmit your keys to
+  any third party other than the selected AI provider. Please be aware of the security risks when passing API keys as
+  command-line arguments or setting them as environment variables.
+- **Translation Quality**: The quality of translations depends on the AI provider and model. We are not responsible for
+  any inaccuracies or errors in the translated text.
+- **Usage Costs**: Use of AI provider APIs may incur costs. You are responsible for all costs associated with your use
+  of the APIs.
+- **No Warranty**: This tool is provided "as is" without any warranties. The developer is not responsible for any damage
+  or loss resulting from the use of this tool.
 
 ---
 
 ## 📄 License
 
 This project is licensed under the [Apache License 2.0](LICENSE).
+

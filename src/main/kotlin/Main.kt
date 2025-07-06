@@ -24,8 +24,12 @@ class GenTransCommand(
     }
 
     private val apikey: String? by option(help = "API key for the AI provider.")
-    private val provider: String? by option(help = "AI provider to use (e.g., openai, gemini).")
-    private val model: String? by option(help = "AI model to use.")
+    private val provider: String? by option(
+        help = "AI provider to use. Supported providers are `google`, `openai`, `anthropic`, `meta`, `alibaba`, `openrouter`, and `ollama`."
+    )
+    private val model: String? by option(
+        help = "AI model to use. e.g. `gemini-2.0-flash`, `gpt-4o`, `claude-3-opus`. Supported models depend on the Koog library. See documentation for details."
+    )
 
     private val targetText: List<String> by argument(help = "Text to translate. Reads from stdin if not provided.").multiple()
 

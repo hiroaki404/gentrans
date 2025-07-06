@@ -158,6 +158,10 @@ $ gentrans --provider openai --model gpt-4 "こんにちは"
 
 Configuration can be done via command-line flags and environment variables.
 
+If the provider or model is not specified, the following default values will be used:
+- **Default Provider**: `openai`
+- **Default Model**: `gpt-4o`
+
 **Note:** Currently, `gentrans` does not support registering and switching between multiple providers or models. You can only use one provider and model configuration at a time.
 
 ### Command-line flags:
@@ -235,6 +239,15 @@ Contributions are welcome! Please feel free to:
 - 🔧 **Submit pull requests** to improve the tool
 
 Before contributing, please check our [contribution guidelines](CONTRIBUTING.md).
+
+---
+
+## 📜 Disclaimer
+
+- **API Keys**: You are responsible for managing your own API keys. This tool does not store or transmit your keys to any third party other than the selected AI provider. Please be aware of the security risks when passing API keys as command-line arguments or setting them as environment variables.
+- **Translation Quality**: The quality of translations depends on the AI provider and model. We are not responsible for any inaccuracies or errors in the translated text.
+- **Usage Costs**: Use of AI provider APIs may incur costs. You are responsible for all costs associated with your use of the APIs.
+- **No Warranty**: This tool is provided "as is" without any warranties. The developer is not responsible for any damage or loss resulting from the use of this tool.
 
 ---
 

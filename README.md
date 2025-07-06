@@ -3,9 +3,7 @@
 **An AI-powered translation tool on your command line.**
 
 [//]: # "[![Release](https://img.shields.io/github/v/release/hiroaki404/gentrans?style=flat-square)](https://github.com/hiroaki404/gentrans/releases)"
-
 [//]: # "[![License](https://img.shields.io/github/license/hiroaki404/gentrans?style=flat-square)](LICENSE)"
-
 [//]: # "[![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-blue?style=flat-square)](#installation)"
 
 ---
@@ -157,11 +155,19 @@ $ gentrans --provider openai --model gpt-4 "こんにちは"
 
 ## Configuration
 
-Configuration is currently done via command-line flags.
+Configuration is currently done via command-line flags and environment variables.
+
+### Command-line flags:
 
 - `--apikey`: Your secret API Key for the translation service.
 - `--provider`: AI Provider to use (e.g., `openai`, `gemini`).
 - `--model`: AI model to use (e.g., `gpt-4`, `gemini-pro`).
+
+### Environment variables:
+
+- `GENTRANS_API_KEY`: Your secret API Key for the translation service.
+- `GENTRANS_PROVIDER`: AI Provider to use (e.g., `openai`, `gemini`).
+- `GENTRANS_MODEL`: AI model to use (e.g., `gpt-4`, `gemini-pro`).
 
 ---
 
@@ -192,15 +198,15 @@ OPTIONS:
 The following features are planned but not yet implemented:
 
 - **Flexible Configuration System:**
-    - Configuration via a file (`~/.config/gentrans/config.toml`).
-    - Configuration via environment variables (`GENTRANS_API_KEY`, etc.).
-    - A clear precedence order for settings (flags > env vars > config file).
+  - Configuration via a file (`~/.config/gentrans/config.toml`).
+  - Configuration via environment variables (`GENTRANS_API_KEY`, `GENTRANS_PROVIDER`, `GENTRANS_MODEL`).
+  - A clear precedence order for settings (flags > env vars > config file).
 - **Advanced Translation Options:**
-    - `-t`, `--to`: Specify the target language.
-    - `-f`, `--from`: Specify the source language.
-    - `-s`, `--style`: Define the translation style (e.g., `formal`, `casual`).
+  - `-t`, `--to`: Specify the target language.
+  - `-f`, `--from`: Specify the source language.
+  - `-s`, `--style`: Define the translation style (e.g., `formal`, `casual`).
 - **`config` Subcommand:**
-    - A dedicated command (`gentrans config`) to easily manage settings (`set`, `get`, `list`, `path`).
+  - A dedicated command (`gentrans config`) to easily manage settings (`set`, `get`, `list`, `path`).
 
 ---
 

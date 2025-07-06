@@ -163,8 +163,8 @@ Configuration can be done via command-line flags and environment variables.
 ### Command-line flags:
 
 - `--apikey`: Your secret API Key for the translation service.
-- `--provider`: AI Provider to use (e.g., `openai`, `gemini`).
-- `--model`: AI model to use (e.g., `gpt-4`, `gemini-pro`).
+- `--provider`: AI Provider to use. Supported providers are `google`, `openai`, `anthropic`, `meta`, `alibaba`, `openrouter`, and `ollama`.
+- `--model`: AI model to use. This tool relies on the [Koog](https://github.com/JetBrains/koog) library, so only models supported by Koog can be used. For a detailed list, please refer to the official Koog documentation (e.g., [GoogleModels.kt](https://github.com/JetBrains/koog/blob/develop/prompt/prompt-executor/prompt-executor-clients/prompt-executor-google-client/src/commonMain/kotlin/ai/koog/prompt/executor/clients/google/GoogleModels.kt)). Representative models include `gemini-2.0-flash`, `gpt-4o`, `o3`, `gpt-4o-mini`, `claude-3-opus`, `claude-sonnet-4-0`, and `llama3.2:3b`.
 
 ### Environment variables:
 
@@ -201,8 +201,8 @@ ARGS:
 OPTIONS:
         --apikey <APIKEY>  API key for the AI provider.
         --provider <PROVIDER>
-                           AI provider to use (e.g., openai, gemini).
-        --model <MODEL>    AI model to use.
+                           AI provider to use. Supported providers are `google`, `openai`, `anthropic`, `meta`, `alibaba`, `openrouter`, and `ollama`.
+        --model <MODEL>    AI model to use. Supported models depend on the Koog library. See documentation for details.
     -h, --help             Print help information
         --version          Print version information
 ```

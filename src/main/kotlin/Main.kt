@@ -1,24 +1,39 @@
 package org.example
 
 import ai.koog.agents.core.agent.AIAgent
-import ai.koog.prompt.executor.clients.google.GoogleModels
-import ai.koog.prompt.executor.llms.all.simpleGoogleAIExecutor
+import ai.koog.prompt.executor.llms.SingleLLMPromptExecutor
 import ai.koog.prompt.executor.model.PromptExecutor
 import com.github.ajalt.clikt.command.SuspendingCliktCommand
 import com.github.ajalt.clikt.command.main
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.arguments.multiple
+import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.versionOption
+import domain.GetExecutorUseCase
+import domain.GetLLModelUseCase
 import org.example.gentrans.BuildConfig
 
 class GenTransCommand(
-    private val executor: PromptExecutor = simpleGoogleAIExecutor(System.getenv("GOOGLE_API_KEY"))
+    private val getExecutor: (providerOption: String?, apikey: String?) -> PromptExecutor = { providerOption, apikey ->
+        val getExecutorUseCase = GetExecutorUseCase()
+        SingleLLMPromptExecutor(getExecutorUseCase(providerOption, apikey))
+    }
 ) : SuspendingCliktCommand() {
     init {
         versionOption(BuildConfig.VERSION)
     }
 
+    private val apikey: String? by option(help = "API key for the AI provider.")
+    private val provider: String? by option(
+        help = "AI provider to use. Supported providers are `google`, `openai`, `anthropic`, `meta`, `alibaba`, `openrouter`, and `ollama`."
+    )
+    private val model: String? by option(
+        help = "AI model to use. e.g. `gemini-2.0-flash`, `gpt-4o`, `claude-3-opus`. Supported models depend on the Koog library. See documentation for details."
+    )
+
     private val targetText: List<String> by argument(help = "Text to translate. Reads from stdin if not provided.").multiple()
+
+    val getLLModelUseCase: GetLLModelUseCase = GetLLModelUseCase()
 
     override suspend fun run() {
         val text = if (targetText.isNotEmpty()) {
@@ -27,9 +42,12 @@ class GenTransCommand(
             generateSequence(::readlnOrNull).joinToString("\n")
         }
 
+        val executor = getExecutor(provider, apikey)
+        val llmModel = getLLModelUseCase(model, provider)
+
         val agent = AIAgent(
             executor = executor,
-            llmModel = GoogleModels.Gemini2_0Flash
+            llmModel = llmModel
         )
         val prompt = """
             Translate the following text into English.

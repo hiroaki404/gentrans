@@ -158,7 +158,7 @@ only use one provider and model configuration at a time.
   supported by Koog can be used. For a detailed list, please refer to the official Koog documentation (
   e.g., [GoogleModels.kt](https://github.com/JetBrains/koog/blob/develop/prompt/prompt-executor/prompt-executor-clients/prompt-executor-google-client/src/commonMain/kotlin/ai/koog/prompt/executor/clients/google/GoogleModels.kt)).
   Representative models include `gemini-2.0-flash`, `gpt-4o`, `o3`, `gpt-4o-mini`, `claude-3-opus`, `claude-sonnet-4-0`,
-  and `llama3.2:3b`.
+  and `llama3.2`.
 
 ### Environment variables:
 

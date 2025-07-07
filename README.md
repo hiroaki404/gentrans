@@ -97,6 +97,7 @@ $ gentrans "こんにちは世界"
 or
 $ gentrans こんにちは世界
 # Expected: Hello, world
+$ gentrans -t "ja" "Hello World"
 ```
 
 ### 🔀 Piping from Standard Input
@@ -141,6 +142,7 @@ This means that any setting provided as a command-line flag will override the co
 
 If the provider or model is not specified, the following default values will be used:
 
+- **Default Target Language**: `English`
 - **Default Provider**: `openai`
 - **Default Model**: `gpt-4o`
 
@@ -205,6 +207,7 @@ OPTIONS:
         --provider <PROVIDER>
                            AI provider to use. Supported providers are `google`, `openai`, `anthropic`, `meta`, `alibaba`, `openrouter`, and `ollama`.
         --model <MODEL>    AI model to use. Supported models depend on the Koog library. See documentation for details.
+    -t, --to <LANGUAGE>    Specify the target language. Since the language is interpreted by an LLM, you can use various formats like `English`, `en`, or even `日本語`.
     -h, --help             Print help information
         --version          Print version information
 ```
@@ -219,9 +222,8 @@ The following features are planned but not yet implemented:
     - Configuration via a file (`~/.config/gentrans/config.toml`).
     - Multiple provider/model profiles with easy switching.
 - **Advanced Translation Options:**
-    - `-t`, `--to`: Specify the target language.
-    - `-f`, `--from`: Specify the source language.
-    - `-s`, `--style`: Define the translation style (e.g., `formal`, `casual`).
+    - `-f`, `--from <LANGUAGE>`: Specify the source language.
+    - `-s`, `--style <STYLE>`: Define the translation style (e.g., `formal`, `casual`).
 - **`config` Subcommand:**
     - A dedicated command (`gentrans config`) to easily manage settings (`set`, `get`, `list`, `path`).
 

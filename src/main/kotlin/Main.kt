@@ -30,6 +30,7 @@ class GenTransCommand(
     private val model: String? by option(
         help = "AI model to use. e.g. `gemini-2.0-flash`, `gpt-4o`, `claude-3-opus`. Supported models depend on the Koog library. See documentation for details."
     )
+    private val to: String? by option(names = arrayOf("-t", "--to"), help = "Specify the target language. Since the language is interpreted by an LLM, you can use various formats like `English`, `en`, or even `日本語`.")
 
     private val targetText: List<String> by argument(help = "Text to translate. Reads from stdin if not provided.").multiple()
 
@@ -50,10 +51,19 @@ class GenTransCommand(
             llmModel = llmModel
         )
         val prompt = """
-            Translate the following text into English.
-            - Return only the translated text.
-            - If the text is already in English, return the original text.
-        """.trimIndent()
+# Instruction
+Translate the following text to the target language.
+
+# Target Language
+${to ?: "English"}
+(Note: The target language may be specified by a name, a language code like 'ja', or a name in its native script like '日本語'.)
+
+# Rules
+- Return ONLY the translated text. Do not include any other phrases or explanations.
+- If the source text is already in the target language, return the original text without modification.
+
+---
+""".trimIndent()
         val result = agent.runAndGetResult("$prompt:\n$text")
         echo(result)
     }

@@ -7,7 +7,8 @@ import org.example.GenTransCommand
 
 class GenTransCommandTest : StringSpec({
     val mockLLMApi = getMockExecutor {
-        mockLLMAnswer("Hello World!") onRequestContains "こんにちは世界"
+        mockLLMAnswer("Hello World!") onCondition { it.contains("English") && it.contains("こんにちは世界") }
+        mockLLMAnswer("Bonjour le monde!") onCondition { it.contains("French") && it.contains("こんにちは世界") }
     }
 
     "test GenTransCommand with argument" {
@@ -24,6 +25,14 @@ class GenTransCommandTest : StringSpec({
         val result = command.test(argv = "")
 
         result.stdout shouldBe "Hello World!\n"
+        result.statusCode shouldBe 0
+    }
+
+    "test GenTransCommand with --to option" {
+        val command = GenTransCommand({ _, _ -> mockLLMApi })
+        val result = command.test(argv = arrayOf("--to", "French", "こんにちは世界"))
+
+        result.stdout shouldBe "Bonjour le monde!\n"
         result.statusCode shouldBe 0
     }
 })

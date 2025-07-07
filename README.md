@@ -219,9 +219,9 @@ The following features are planned but not yet implemented:
     - Configuration via a file (`~/.config/gentrans/config.toml`).
     - Multiple provider/model profiles with easy switching.
 - **Advanced Translation Options:**
-    - `-t`, `--to`: Specify the target language.
-    - `-f`, `--from`: Specify the source language.
-    - `-s`, `--style`: Define the translation style (e.g., `formal`, `casual`).
+    - `-t`, `--to <LANGUAGE>`: Specify the target language. Since the language is interpreted by an LLM, you can use various formats like `English`, `en`, or even `日本語`.
+    - `-f`, `--from <LANGUAGE>`: Specify the source language.
+    - `-s`, `--style <STYLE>`: Define the translation style (e.g., `formal`, `casual`).
 - **`config` Subcommand:**
     - A dedicated command (`gentrans config`) to easily manage settings (`set`, `get`, `list`, `path`).
 

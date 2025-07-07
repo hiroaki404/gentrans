@@ -51,10 +51,19 @@ class GenTransCommand(
             llmModel = llmModel
         )
         val prompt = """
-            Translate the following text into ${to ?: "English"}.
-            - Return only the translated text.
-            - If the text is already in the target language, return the original text.
-        """.trimIndent()
+# Instruction
+Translate the following text to the target language.
+
+# Target Language
+${to ?: "English"}
+(Note: The target language may be specified by a name, a language code like 'ja', or a name in its native script like '日本語'.)
+
+# Rules
+- Return ONLY the translated text. Do not include any other phrases or explanations.
+- If the source text is already in the target language, return the original text without modification.
+
+---
+""".trimIndent()
         val result = agent.runAndGetResult("$prompt:\n$text")
         echo(result)
     }

@@ -177,6 +177,16 @@ gentrans "こんにちは世界"
 gentrans --apikey "your-api-key" --provider "gemini" --model "gemini-2.0-flash" "こんにちは世界"
 ```
 
+### ✅ Verified Combinations
+
+The following combinations of providers and models have been tested and are known to work:
+
+| Provider | Model              |
+|----------|--------------------|
+| `openai` | `gpt-4o`           |
+| `google` | `gemini-2.0-flash` |
+| `ollama` | `llama3.2`         |
+
 ---
 
 ## 📖 Command Reference

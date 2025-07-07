@@ -4,6 +4,7 @@ import ai.koog.prompt.executor.clients.LLMClient
 import ai.koog.prompt.executor.clients.anthropic.AnthropicLLMClient
 import ai.koog.prompt.executor.clients.google.GoogleLLMClient
 import ai.koog.prompt.executor.clients.openai.OpenAILLMClient
+import ai.koog.prompt.executor.ollama.client.OllamaClient
 import data.ConfigDataSource
 import data.EnvConfigDataSource
 import data.LocalConfigDataSource
@@ -41,15 +42,26 @@ class GetExecutorUseCase(
 }
 
 private fun getExecutor(providerName: String, apiKey: String?): LLMClient {
-    val finalApiKey = apiKey
-        ?: throw IllegalArgumentException("${providerName.replaceFirstChar { it.uppercase() }} API key is required")
-
     return when (providerName) {
-        "google" -> GoogleLLMClient(apiKey = finalApiKey)
+        "google" -> {
+            val finalApiKey = apiKey
+                ?: throw IllegalArgumentException("${providerName.replaceFirstChar { it.uppercase() }} API key is required")
+            GoogleLLMClient(apiKey = finalApiKey)
+        }
 
-        "openai" -> OpenAILLMClient(apiKey = finalApiKey)
+        "openai" -> {
+            val finalApiKey = apiKey
+                ?: throw IllegalArgumentException("${providerName.replaceFirstChar { it.uppercase() }} API key is required")
+            OpenAILLMClient(apiKey = finalApiKey)
+        }
 
-        "anthropic" -> AnthropicLLMClient(apiKey = finalApiKey)
+        "anthropic" -> {
+            val finalApiKey = apiKey
+                ?: throw IllegalArgumentException("${providerName.replaceFirstChar { it.uppercase() }} API key is required")
+            AnthropicLLMClient(apiKey = finalApiKey)
+        }
+
+        "ollama" -> OllamaClient()
 
         else -> throw IllegalArgumentException("Unknown provider: $providerName")
     }

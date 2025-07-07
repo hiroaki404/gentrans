@@ -10,13 +10,6 @@
 
 ---
 
-> ⚠️ **Work In Progress** ⚠️
->
-> This tool is under active development. Commands, flags, and APIs are subject to change without notice. Please use it
-> with caution.
-
----
-
 ## 📋 Table of Contents
 
 - [About](#-about)
@@ -97,7 +90,8 @@ $ gentrans "こんにちは世界"
 or
 $ gentrans こんにちは世界
 # Expected: Hello, world
-$ gentrans -t "ja" "Hello World"
+$ gentrans -t ja "Hello World"
+# Expected: こんにちは世界
 ```
 
 ### 🔀 Piping from Standard Input
@@ -225,7 +219,7 @@ The following features are planned but not yet implemented:
     - `-f`, `--from <LANGUAGE>`: Specify the source language.
     - `-s`, `--style <STYLE>`: Define the translation style (e.g., `formal`, `casual`).
 - **`config` Subcommand:**
-    - A dedicated command (`gentrans config`) to easily manage settings (`set`, `get`, `list`, `path`).
+    - A dedicated command (`gentrans config`) to easily manage settings (`set`, `get`, `list`).
 
 ---
 

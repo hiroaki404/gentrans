@@ -90,8 +90,14 @@ $ gentrans "こんにちは世界"
 or
 $ gentrans こんにちは世界
 # Expected: Hello, world
+
 $ gentrans -t ja "Hello World"
 # Expected: こんにちは世界
+
+# Set default target language and omit -t flag (default is English)
+$ export GENTRANS_TARGET_LANGUAGE="ja"
+$ gentrans "Hello World"
+# Expected: こんにちは世界 (instead of default English)
 ```
 
 ### 🔀 Piping from Standard Input
@@ -131,10 +137,12 @@ Configuration settings are prioritized in the following order:
 
 1. **Command-line flags** (highest priority)
 2. **Environment variables**
+3. **Default values** (lowest priority)
 
-This means that any setting provided as a command-line flag will override the corresponding environment variable.
+This means that any setting provided as a command-line flag will override the corresponding environment variable, which
+in turn overrides the default value.
 
-If the provider or model is not specified, the following default values will be used:
+If no configuration is specified, the following default values will be used:
 
 - **Default Target Language**: `English`
 - **Default Provider**: `openai`
@@ -159,6 +167,7 @@ only use one provider and model configuration at a time.
 - `GENTRANS_API_KEY`: Your secret API Key for the translation service.
 - `GENTRANS_PROVIDER`: AI Provider to use (e.g., `openai`, `google`).
 - `GENTRANS_MODEL`: AI model to use (e.g., `gpt-4o`, `gemini-2.0-flash`).
+- `GENTRANS_TARGET_LANGUAGE`: Default target language for translation (e.g., `Japanese`, `ja`, `日本語`).
 
 ### Usage Examples:
 
@@ -169,8 +178,15 @@ export GENTRANS_PROVIDER="openai"
 export GENTRANS_MODEL="gpt-4o"
 gentrans "こんにちは世界"
 
+# Set default target language to Japanese (otherwise defaults to English)
+export GENTRANS_TARGET_LANGUAGE="ja"
+gentrans "Hello World"  # Translates to Japanese by default
+
 # Using command-line flags (overrides environment variables)
 gentrans --apikey "your-api-key" --provider "gemini" --model "gemini-2.0-flash" "こんにちは世界"
+
+# Command-line target language overrides environment variable
+gentrans -t "French" "Hello World"  # Translates to French regardless of GENTRANS_TARGET_LANGUAGE
 ```
 
 ### ✅ Verified Combinations

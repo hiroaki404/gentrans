@@ -47,3 +47,8 @@ bin/
 .github/github-instructions/
 .github/prompts/
 
+### Claude Configuration ###
+.claude/settings.local.json
+.mcp.json
+CLAUDE.local.md
+

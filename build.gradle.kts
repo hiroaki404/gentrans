@@ -3,10 +3,15 @@ plugins {
     application
     alias(libs.plugins.shadow)
     alias(libs.plugins.buildconfig)
+    alias(libs.plugins.ktlint)
 }
 
 group = "org.example"
 version = libs.versions.appVersion.get()
+
+subprojects {
+    apply(plugin = "org.jlleitschuh.gradle.ktlint")
+}
 
 repositories {
     mavenCentral()

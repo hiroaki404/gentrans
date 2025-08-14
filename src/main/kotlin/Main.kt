@@ -30,7 +30,10 @@ class GenTransCommand(
     private val model: String? by option(
         help = "AI model to use. e.g. `gemini-2.0-flash`, `gpt-4o`, `claude-3-opus`. Supported models depend on the Koog library. See documentation for details."
     )
-    private val to: String? by option(names = arrayOf("-t", "--to"), help = "Specify the target language. Since the language is interpreted by an LLM, you can use various formats like `English`, `en`, or even `日本語`.")
+    private val to: String? by option(
+        names = arrayOf("-t", "--to"),
+        help = "Specify the target language. Since the language is interpreted by an LLM, you can use various formats like `English`, `en`, or even `日本語`."
+    )
 
     private val targetText: List<String> by argument(help = "Text to translate. Reads from stdin if not provided.").multiple()
 
@@ -64,7 +67,7 @@ ${to ?: "English"}
 
 ---
 """.trimIndent()
-        val result = agent.runAndGetResult("$prompt:\n$text")
+        val result = agent.run("$prompt:\n$text")
         echo(result)
     }
 }

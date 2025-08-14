@@ -13,6 +13,13 @@ subprojects {
     apply(plugin = "org.jlleitschuh.gradle.ktlint")
 }
 
+ktlint {
+    filter {
+        exclude("**/build/**")
+        exclude { element -> element.file.path.contains("build/generated") }
+    }
+}
+
 repositories {
     mavenCentral()
 }

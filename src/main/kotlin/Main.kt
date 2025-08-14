@@ -66,7 +66,7 @@ ${to ?: "English"}
 - If the source text is already in the target language, return the original text without modification.
 
 ---
-""".trimIndent()
+        """.trimIndent()
         val result = agent.run("$prompt:\n$text")
         echo(result)
     }

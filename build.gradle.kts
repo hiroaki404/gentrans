@@ -39,4 +39,3 @@ buildConfig {
 application {
     mainClass.set("org.example.MainKt")
 }
-

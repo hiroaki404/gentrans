@@ -8,7 +8,8 @@ class EnvConfigDataSource : ConfigDataSource {
         return EnvConfigs(
             llmModelKey = System.getenv("GENTRANS_MODEL"),
             providerKey = System.getenv("GENTRANS_PROVIDER"),
-            targetLanguage = System.getenv("GENTRANS_TARGET_LANGUAGE"),
+            nativeLanguage = System.getenv("GENTRANS_NATIVE_LANGUAGE"),
+            secondLanguage = System.getenv("GENTRANS_SECOND_LANGUAGE"),
             apiKey = System.getenv("GENTRANS_API_KEY")
         )
     }

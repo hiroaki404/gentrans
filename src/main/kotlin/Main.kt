@@ -88,9 +88,11 @@ ${languagePromptArgs.secondLanguage}
 ---
 
 # Text
+
+$text
         """.trimIndent()
 
-        val result = agent.run("$prompt\n\n $text")
+        val result = agent.run(prompt)
         echo(result)
     }
 }

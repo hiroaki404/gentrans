@@ -57,24 +57,27 @@ class GenTransCommand(
             llmModel = llmModel
         )
 
-        val prompt = if (languagePromptArgs.targetLanguage != null) {
-            // -t オプション指定時
-            """
+        val prompt = """
 # Instruction
-Translate the following text to the target language.
+Translate the following text according to the rules below.
+
+# Language Rules
+- If targetLanguage is specified, translate the given text to the targetLanguage, ignoring Native Language and Second Language settings.
+- If targetLanguage is not specified (shown as "Undefined"), follow these rules based on the detected language of the input text:
+    - If the input text is in Native Language, translate to Second Language
+    - If the input text is in Second Language, translate to Native Language  
+    - If the input text is in any other language, translate to Native Language
+- If the source text is already in the appropriate target language, return the original text without modification.
+- Note: The target language may be specified by a name, a language code like 'ja', or a name in its native script like '日本語'.
+
+# Output Rules
+- Return ONLY the translated text. Do not include any other phrases or explanations.
+- Do not add quotes, prefixes, or suffixes to the translation.
+
+---
 
 # Target Language
-${languagePromptArgs.targetLanguage}
-
-# Rules
-- Return ONLY the translated text. Do not include any other phrases or explanations.
-- If the source text is already in the target language, return the original text without modification.
-            """.trimIndent()
-        } else {
-            // 自動翻訳モード
-            """
-# Instruction
-Detect the language of the input text and translate accordingly.
+${languagePromptArgs.targetLanguage ?: "Undefined"}
 
 # Native Language
 ${languagePromptArgs.nativeLanguage}
@@ -82,16 +85,12 @@ ${languagePromptArgs.nativeLanguage}
 # Second Language
 ${languagePromptArgs.secondLanguage}
 
-# Rules
-- If the input text is in the native language, translate to the second language
-- If the input text is in the second language, translate to the native language
-- If the input text is in any other language, translate to the native language
-- Return ONLY the translated text. Do not include any other phrases or explanations.
-- If the source text is already in the appropriate target language, return the original text without modification.
-            """.trimIndent()
-        }
+---
 
-        val result = agent.run("$prompt\n\nText: $text")
+# Text
+        """.trimIndent()
+
+        val result = agent.run("$prompt\n\n $text")
         echo(result)
     }
 }

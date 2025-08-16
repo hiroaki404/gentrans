@@ -87,18 +87,16 @@ Provide the text you want to translate as an argument:
 
 ```bash
 $ gentrans "こんにちは世界"
-or
-$ gentrans こんにちは世界
 # Expected: Hello, world
 
 $ gentrans -t ja "Hello World"
 # Expected: こんにちは世界
 
-# Set default target language and omit -t flag (default is English)
-$ export GENTRANS_TARGET_LANGUAGE="ja"
-$ gentrans "Hello World"
-# Expected: こんにちは世界 (instead of default English)
+$ gentrans -t French "Hello"
+# Expected: Bonjour
 ```
+
+**Language Format Flexibility**: You can specify target languages in various formats since they are interpreted by the LLM. For example: `English`, `en`, `Japanese`, `ja`, `日本語`, `French`, `fr`, etc.
 
 ### 🔀 Piping from Standard Input
 
@@ -113,6 +111,12 @@ Translate the content of a file:
 
 ```bash
 $ cat document_ja.txt | gentrans > document_en.txt
+```
+
+or clipboard
+
+```bash
+$ pbpaste | gentrans # macOS
 ```
 
 ### 🤖 Specifying AI Provider and Model
@@ -144,9 +148,10 @@ in turn overrides the default value.
 
 If no configuration is specified, the following default values will be used:
 
-- **Default Target Language**: `English`
 - **Default Provider**: `openai`
 - **Default Model**: `gpt-4o`
+- **Default Native Language**: `English`
+- **Default Second Language**: `English`
 
 **Note:** Currently, `gentrans` does not support registering and switching between multiple providers or models. You can
 only use one provider and model configuration at a time.
@@ -167,7 +172,11 @@ only use one provider and model configuration at a time.
 - `GENTRANS_API_KEY`: Your secret API Key for the translation service.
 - `GENTRANS_PROVIDER`: AI Provider to use (e.g., `openai`, `google`).
 - `GENTRANS_MODEL`: AI model to use (e.g., `gpt-4o`, `gemini-2.0-flash`).
-- `GENTRANS_TARGET_LANGUAGE`: Default target language for translation (e.g., `Japanese`, `ja`, `日本語`).
+- `GENTRANS_NATIVE_LANGUAGE`: Your native language (e.g., `Japanese`, `English`). You can use various formats like `Japanese`, `ja`, `日本語`, etc.
+- `GENTRANS_SECOND_LANGUAGE`: Your second language (e.g., `English`, `Japanese`). You can use various formats like `English`, `en`, `英語`, etc.
+
+Regarding GENTRANS_NATIVE_LANGUAGE and GENTRANS_SECOND_LANGUAGE, there is an explanation in the Automatic Bidirectional
+Translation section below.
 
 ### Usage Examples:
 
@@ -178,15 +187,35 @@ export GENTRANS_PROVIDER="openai"
 export GENTRANS_MODEL="gpt-4o"
 gentrans "こんにちは世界"
 
-# Set default target language to Japanese (otherwise defaults to English)
-export GENTRANS_TARGET_LANGUAGE="ja"
-gentrans "Hello World"  # Translates to Japanese by default
-
 # Using command-line flags (overrides environment variables)
 gentrans --apikey "your-api-key" --provider "gemini" --model "gemini-2.0-flash" "こんにちは世界"
 
-# Command-line target language overrides environment variable
-gentrans -t "French" "Hello World"  # Translates to French regardless of GENTRANS_TARGET_LANGUAGE
+# Manual target language specification (overrides automatic mode)
+gentrans -t "French" "Hello World"  # → Bonjour
+```
+
+### 🔄 Automatic Bidirectional Translation
+
+Configure your native and second languages for automatic translation. The translation behavior follows these rules:
+
+- **When `-t` option is specified**: Translates to the specified target language (manual mode)
+- **When `-t` option is not specified**: Automatic translation mode based on input language detection:
+    - If input is in your **native language** → translates to your **second language**
+    - If input is in your **second language** → translates to your **native language**
+    - If input is in **any other language** → translates to your **native language**
+- **Default behavior**: Both native and second languages default to English. Without the `-t` option, English input
+  returns as-is, while all other languages are translated to English.
+
+```bash
+# Configure languages
+export GENTRANS_NATIVE_LANGUAGE="Japanese"
+# export GENTRANS_SECOND_LANGUAGE="English" # Default is English, so no need to set this
+
+# Automatic translation based on input language
+gentrans "Hello World"        # → こんにちは世界 (English → Japanese)
+gentrans "こんにちは世界"      # → Hello World (Japanese → English)
+gentrans "Bonjour"            # → こんにちは (French → Japanese)
+gentrans "Hola"               # → こんにちは (Spanish → Japanese)
 ```
 
 ### ✅ Verified Combinations

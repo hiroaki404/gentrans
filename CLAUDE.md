@@ -98,6 +98,8 @@ Required environment variables for development:
 - `GENTRANS_API_KEY`: API key for AI providers
 - `GENTRANS_PROVIDER`: Default AI provider (openai, google, etc.)
 - `GENTRANS_MODEL`: Default model name
+- `GENTRANS_NATIVE_LANGUAGE`: User's native language
+- `GENTRANS_SECOND_LANGUAGE`: User's second language
 
 ## Supported AI Providers and Models
 

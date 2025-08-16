@@ -7,8 +7,8 @@ import org.example.GenTransCommand
 
 class GenTransCommandTest : StringSpec({
     val mockLLMApi = getMockExecutor {
-        mockLLMAnswer("Hello World!") onCondition { it.contains("English") && it.contains("こんにちは世界") }
         mockLLMAnswer("Bonjour le monde!") onCondition { it.contains("French") && it.contains("こんにちは世界") }
+        mockLLMAnswer("Hello World!") onCondition { it.contains("English") && it.contains("こんにちは世界") }
     }
 
     "test GenTransCommand with argument" {

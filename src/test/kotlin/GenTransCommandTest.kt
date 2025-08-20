@@ -7,8 +7,33 @@ import org.example.GenTransCommand
 
 class GenTransCommandTest : StringSpec({
     val mockLLMApi = getMockExecutor {
-        mockLLMAnswer("Bonjour le monde!") onCondition { it.contains("French") && it.contains("こんにちは世界") }
-        mockLLMAnswer("Hello World!") onCondition { it.contains("English") && it.contains("こんにちは世界") }
+        // 言語検出プロンプト用のモック
+        mockLLMAnswer("Japanese") onCondition { it.contains("Please identify the natural language") }
+
+        // 日本語→英語翻訳の場合（targetLanguageが未指定）
+        mockLLMAnswer("English") onCondition {
+            it.contains("Please determine the target natural language") &&
+                it.contains("Native Language:") &&
+                !it.contains("Target language:")
+        }
+
+        // フランス語翻訳の場合（--toオプション指定）
+        mockLLMAnswer("French") onCondition {
+            it.contains("Please determine the target natural language") &&
+                it.contains("Target language: French")
+        }
+
+        // 実際の翻訳プロンプト用のモック（英語）
+        mockLLMAnswer("Hello World!") onCondition {
+            it.contains("Translate the following text") &&
+                it.contains("from Japanese to English")
+        }
+
+        // 実際の翻訳プロンプト用のモック（フランス語）
+        mockLLMAnswer("Bonjour le monde!") onCondition {
+            it.contains("Translate the following text") &&
+                it.contains("from Japanese to French")
+        }
     }
 
     "test GenTransCommand with argument" {

@@ -1,6 +1,7 @@
 plugins {
     id("buildsrc.convention.kotlin-jvm")
     application
+    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.shadow)
     alias(libs.plugins.buildconfig)
     alias(libs.plugins.ktlint)
@@ -33,6 +34,8 @@ dependencies {
     implementation(libs.clikt)
     implementation(libs.koog.agents)
     implementation(libs.slf4j.simple)
+    implementation(libs.kotlinx.serialization.json)
+    implementation(libs.kotlinx.serialization.core)
 }
 
 tasks.test {

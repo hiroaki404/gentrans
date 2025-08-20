@@ -52,47 +52,15 @@ class GenTransCommand(
         val llmModel = getLLModelUseCase(model, provider)
         val languagePromptArgs = getLanguagePromptArgsUseCase(targetLanguage)
 
+        val strategy = createTranslationStrategy(languagePromptArgs)
+
         val agent = AIAgent(
             executor = executor,
-            llmModel = llmModel
+            llmModel = llmModel,
+            strategy = strategy,
         )
 
-        val prompt = """
-# Instruction
-Translate the following text according to the rules below.
-
-# Language Rules
-- If targetLanguage is specified, translate the given text to the targetLanguage, ignoring Native Language and Second Language settings.
-- If targetLanguage is not specified (shown as "Undefined"), follow these rules based on the detected language of the input text:
-    - If the input text is in Native Language, translate to Second Language
-    - If the input text is in Second Language, translate to Native Language  
-    - If the input text is in any other language, translate to Native Language
-- If the source text is already in the appropriate target language, return the original text without modification.
-- Note: The target language may be specified by a name, a language code like 'ja', or a name in its native script like '日本語'.
-
-# Output Rules
-- Return ONLY the translated text. Do not include any other phrases or explanations.
-- Do not add quotes, prefixes, or suffixes to the translation.
-
----
-
-# Target Language
-${languagePromptArgs.targetLanguage ?: "Undefined"}
-
-# Native Language
-${languagePromptArgs.nativeLanguage}
-
-# Second Language
-${languagePromptArgs.secondLanguage}
-
----
-
-# Text
-
-$text
-        """.trimIndent()
-
-        val result = agent.run(prompt)
+        val result = agent.run(text)
         echo(result)
     }
 }

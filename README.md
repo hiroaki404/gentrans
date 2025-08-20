@@ -194,7 +194,7 @@ gentrans --apikey "your-api-key" --provider "gemini" --model "gemini-2.0-flash" 
 gentrans -t "French" "Hello World"  # → Bonjour
 ```
 
-### 🔄 Automatic Bidirectional Translation
+### 🔄 Automatic Language Detection Translation
 
 Configure your native and second languages for automatic translation. The translation behavior follows these rules:
 

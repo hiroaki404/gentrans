@@ -1,51 +1,90 @@
 package org.example
 
 import ai.koog.agents.core.dsl.builder.strategy
+import ai.koog.prompt.dsl.PromptBuilder
 import model.LanguagePromptArgs
 
-fun detectSourceLanguagePrompt(text: String) = """
-# Instructions:
+fun PromptBuilder.detectSourceLanguagePrompt(
+    text: String
+) {
+    system(
+        """
+You are a language detection expert. Your task is to identify the natural language of given text.
 
-Please identify the natural language of the following text. Output the language name in English. For example, "Japanese", "English", "French", etc.
-Return ONLY the language name. Do not include any other phrases or explanations.
-
-# Text to analyze:
-
-$text
-""".trimIndent()
-
-fun decideTargetLanguagePrompt(
-    languagePromptArgs: LanguagePromptArgs
-) = """Please determine the target natural language for translation according to the following rules.
-${
-    languagePromptArgs.targetLanguage?.let {
-        """Target language: $it
-This is the target natural language, but please replace it with the English natural language name.
-For example, "ja" should be "Japanese", "英語" should be "English", and so on.
-Return ONLY the language name. Do not include any other phrases or explanations.
-"""
-    } ?: """
-Native Language: ${languagePromptArgs.nativeLanguage}, Second Language: ${languagePromptArgs.secondLanguage}
-    - If the input text is in Native Language, translate to Second Language
-    - If the input text is in Second Language, translate to Native Language  
-    - If the input text is in any other language, translate to Native Language
-The language determined by this rule is the target natural language, but please replace it with the English natural language name.
-For example, "ja" should be "Japanese", "英語" should be "English", and so on.
-Return ONLY the language name. Do not include any other phrases or explanations.
-"""
+Rules:
+- Output the language name in English (e.g., "Japanese", "English", "French")
+- Return ONLY the language name
+- Do not include any other phrases or explanations
+        """.trimIndent()
+    )
+    user("Identify the natural language of the following text:\n\n$text")
 }
-""".trimIndent()
 
-fun translatePrompt(
+fun PromptBuilder.decideTargetLanguagePrompt(
+    input: String,
+    languagePromptArgs: LanguagePromptArgs
+) {
+    if (languagePromptArgs.targetLanguage != null) {
+        system(
+            """
+You are a language name standardization expert. Your task is to convert language identifiers to standard English language names.
+
+Rules:
+- Convert language codes/names to standard English format
+- Examples: "ja" → "Japanese", "英語" → "English", "fr" → "French"
+- Return ONLY the standardized language name
+- Do not include any other phrases or explanations
+            """.trimIndent()
+        )
+        user("Convert this language identifier to standard English: ${languagePromptArgs.targetLanguage}")
+    } else {
+        system(
+            """
+Your task is to determine the appropriate target language based on user preferences.
+
+Rules:
+- Return the target language name in standard English format
+- Examples: "ja" → "Japanese", "英語" → "English", "fr" → "French"
+- Return ONLY the language name
+- Do not include any other phrases or explanations
+            """.trimIndent()
+        )
+        user(
+            """
+Determine the target language for translation and return it based on the context and logic.
+            
+Context:
+- Input Text Language: $input
+- Native Language: ${languagePromptArgs.nativeLanguage}
+- Second Language: ${languagePromptArgs.secondLanguage}
+Note: The context can contain various formats. Examples: "English", "en", "日本語", "ja"
+
+Translation Logic:
+- Input Text Language = Native Language → Second Language
+- Input Text Language = Second Language → Native Language
+- Input Text Language = any other language → Native Language
+            """.trimMargin()
+        )
+    }
+}
+
+fun PromptBuilder.translatePrompt(
     sourceLanguage: String?,
-    targetLanguageVar: String?,
-    targetText: String
-) = """
-Translate the following text, from $sourceLanguage to $targetLanguageVar.
-Return ONLY the translated text. Do not include any other phrases or explanations.
----
-$targetText.
-""".trimIndent()
+    targetLanguage: String?,
+    text: String
+) {
+    system(
+        """
+You are a professional translator. Your task is to translate text accurately from one language to another.
+
+Rules:
+- Provide only the translated text
+- Do not include any explanations or additional phrases
+        """.trimIndent()
+    )
+
+    user("Translate the following text from $sourceLanguage to $targetLanguage:\n\n$text")
+}
 
 fun createTranslationStrategy(
     languagePromptArgs: LanguagePromptArgs
@@ -58,7 +97,7 @@ fun createTranslationStrategy(
         llm.writeSession {
             inputText = input
             updatePrompt {
-                user(detectSourceLanguagePrompt(inputText))
+                detectSourceLanguagePrompt(inputText)
             }
 
             requestLLMWithoutTools().content.also {
@@ -67,10 +106,10 @@ fun createTranslationStrategy(
         }
     }
 
-    val decideTargetLanguage by node<String, String>("Decide Target Language") {
+    val decideTargetLanguage by node<String, String>("Decide Target Language") { input ->
         llm.writeSession {
             updatePrompt {
-                user(decideTargetLanguagePrompt(languagePromptArgs))
+                decideTargetLanguagePrompt(input, languagePromptArgs)
             }
 
             requestLLMWithoutTools().content.also {
@@ -79,10 +118,10 @@ fun createTranslationStrategy(
         }
     }
 
-    val translateByLLM by node<String, String>("Translate to LLM") {
+    val translateByLLM by node<String, String>("Translate by LLM") {
         llm.writeSession {
             updatePrompt {
-                user(translatePrompt(sourceLanguage, targetLanguageVar, inputText))
+                translatePrompt(sourceLanguage, targetLanguageVar, inputText)
             }
             requestLLMWithoutTools().content.removeSuffix("\n")
         }

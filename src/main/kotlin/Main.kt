@@ -29,7 +29,7 @@ class GenTransCommand(
         help = "AI provider to use. Supported providers are `google`, `openai`, `anthropic`, `meta`, `alibaba`, `openrouter`, and `ollama`."
     )
     private val model: String? by option(
-        help = "AI model to use. e.g. `gemini-2.0-flash`, `gpt-4o`, `claude-3-opus`. Supported models depend on the Koog library. See documentation for details."
+        help = "AI model to use. e.g. `gemini-2.0-flash`, `gpt-4o`, `claude-3-opus`, `llama3.2:latest`. Supported models depend on the Koog library. See documentation for details."
     )
     private val targetLanguage: String? by option(
         names = arrayOf("-t", "--to"),

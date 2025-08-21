@@ -96,7 +96,8 @@ $ gentrans -t French "Hello"
 # Expected: Bonjour
 ```
 
-**Language Format Flexibility**: You can specify target languages in various formats since they are interpreted by the LLM. For example: `English`, `en`, `Japanese`, `ja`, `日本語`, `French`, `fr`, etc.
+**Language Format Flexibility**: You can specify target languages in various formats since they are interpreted by the
+LLM. For example: `English`, `en`, `Japanese`, `ja`, `日本語`, `French`, `fr`, etc.
 
 ### 🔀 Piping from Standard Input
 
@@ -165,15 +166,17 @@ only use one provider and model configuration at a time.
   supported by Koog can be used. For a detailed list, please refer to the official Koog documentation (
   e.g., [GoogleModels.kt](https://github.com/JetBrains/koog/blob/develop/prompt/prompt-executor/prompt-executor-clients/prompt-executor-google-client/src/commonMain/kotlin/ai/koog/prompt/executor/clients/google/GoogleModels.kt)).
   Representative models include `gemini-2.0-flash`, `gpt-4o`, `o3`, `gpt-4o-mini`, `claude-3-opus`, `claude-sonnet-4-0`,
-  and `llama3.2`.
+  and `llama3.2:latest`.
 
 ### Environment variables:
 
 - `GENTRANS_API_KEY`: Your secret API Key for the translation service.
 - `GENTRANS_PROVIDER`: AI Provider to use (e.g., `openai`, `google`).
 - `GENTRANS_MODEL`: AI model to use (e.g., `gpt-4o`, `gemini-2.0-flash`).
-- `GENTRANS_NATIVE_LANGUAGE`: Your native language (e.g., `Japanese`, `English`). You can use various formats like `Japanese`, `ja`, `日本語`, etc.
-- `GENTRANS_SECOND_LANGUAGE`: Your second language (e.g., `English`, `Japanese`). You can use various formats like `English`, `en`, `英語`, etc.
+- `GENTRANS_NATIVE_LANGUAGE`: Your native language (e.g., `Japanese`, `English`). You can use various formats like
+  `Japanese`, `ja`, `日本語`, etc.
+- `GENTRANS_SECOND_LANGUAGE`: Your second language (e.g., `English`, `Japanese`). You can use various formats like
+  `English`, `en`, `英語`, etc.
 
 Regarding GENTRANS_NATIVE_LANGUAGE and GENTRANS_SECOND_LANGUAGE, there is an explanation in the Automatic Bidirectional
 Translation section below.
@@ -222,11 +225,13 @@ gentrans "Hola"               # → こんにちは (Spanish → Japanese)
 
 The following combinations of providers and models have been tested and are known to work:
 
-| Provider | Model              |
-|----------|--------------------|
-| `openai` | `gpt-4o`           |
-| `google` | `gemini-2.0-flash` |
-| `ollama` | `llama3.2`         |
+| Provider | Model                   |
+|----------|-------------------------|
+| `openai` | `gpt-4o`                |
+| `openai` | `gpt-4o-mini`           |
+| `google` | `gemini-2.0-flash`      |
+| `google` | `gemini-2.0-flash-lite` |
+| `ollama` | `llama3.2:latest`       |
 
 ---
 
@@ -245,7 +250,7 @@ OPTIONS:
         --apikey <APIKEY>  API key for the AI provider.
         --provider <PROVIDER>
                            AI provider to use. Supported providers are `google`, `openai`, `anthropic`, `meta`, `alibaba`, `openrouter`, and `ollama`.
-        --model <MODEL>    AI model to use. Supported models depend on the Koog library. See documentation for details.
+        --model <MODEL>    AI model to use. e.g. `gemini-2.0-flash`, `gpt-4o`, `claude-3-opus`, `llama3.2:latest`. Supported models depend on the Koog library. See documentation for details.
     -t, --to <LANGUAGE>    Specify the target language. Since the language is interpreted by an LLM, you can use various formats like `English`, `en`, or even `日本語`.
     -h, --help             Print help information
         --version          Print version information

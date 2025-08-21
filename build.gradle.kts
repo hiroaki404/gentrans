@@ -14,6 +14,10 @@ subprojects {
     apply(plugin = "org.jlleitschuh.gradle.ktlint")
 }
 
+tasks.withType<Test> {
+    jvmArgs("--add-opens=java.base/java.util=ALL-UNNAMED", "--add-opens=java.base/java.lang=ALL-UNNAMED")
+}
+
 ktlint {
     filter {
         exclude("**/build/**")

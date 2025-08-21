@@ -166,7 +166,7 @@ only use one provider and model configuration at a time.
   supported by Koog can be used. For a detailed list, please refer to the official Koog documentation (
   e.g., [GoogleModels.kt](https://github.com/JetBrains/koog/blob/develop/prompt/prompt-executor/prompt-executor-clients/prompt-executor-google-client/src/commonMain/kotlin/ai/koog/prompt/executor/clients/google/GoogleModels.kt)).
   Representative models include `gemini-2.0-flash`, `gpt-4o`, `o3`, `gpt-4o-mini`, `claude-3-opus`, `claude-sonnet-4-0`,
-  and `llama3.2:latest`.
+  `gemma3n:latest`, and `llama3.2:latest`.
 
 ### Environment variables:
 
@@ -232,6 +232,7 @@ The following combinations of providers and models have been tested and are know
 | `google` | `gemini-2.0-flash`      |
 | `google` | `gemini-2.0-flash-lite` |
 | `ollama` | `llama3.2:latest`       |
+| `ollama` | `gemma3n:latest`        |
 
 ---
 
@@ -250,7 +251,7 @@ OPTIONS:
         --apikey <APIKEY>  API key for the AI provider.
         --provider <PROVIDER>
                            AI provider to use. Supported providers are `google`, `openai`, `anthropic`, `meta`, `alibaba`, `openrouter`, and `ollama`.
-        --model <MODEL>    AI model to use. e.g. `gemini-2.0-flash`, `gpt-4o`, `claude-3-opus`, `llama3.2:latest`. Supported models depend on the Koog library. See documentation for details.
+        --model <MODEL>    AI model to use. e.g. `gemini-2.0-flash`, `gpt-4o`, `claude-3-opus`, `gemma3n:latest`, `llama3.2:latest`. Supported models depend on the Koog library. See documentation for details.
     -t, --to <LANGUAGE>    Specify the target language. Since the language is interpreted by an LLM, you can use various formats like `English`, `en`, or even `日本語`.
     -h, --help             Print help information
         --version          Print version information

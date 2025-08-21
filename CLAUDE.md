@@ -33,6 +33,8 @@ Google, Anthropic, Meta, Alibaba, OpenRouter, Ollama) and follows clean architec
 
 ### Testing
 
+- When conducting test commands, understand the module configuration and execute reliable commands.
+
 ```bash
 # Run all tests
 ./gradlew test

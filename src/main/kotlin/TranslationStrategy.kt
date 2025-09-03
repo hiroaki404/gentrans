@@ -21,7 +21,7 @@ Rules:
 }
 
 fun PromptBuilder.decideTargetLanguagePrompt(
-    input: String,
+    sourceLanguage: String,
     languagePromptArgs: LanguagePromptArgs
 ) {
     if (languagePromptArgs.targetLanguage != null) {
@@ -54,7 +54,7 @@ Rules:
 Determine the target language for translation and return it based on the context and logic.
             
 Context:
-- Input Text Language: $input
+- Input Text Language: $sourceLanguage
 - Native Language: ${languagePromptArgs.nativeLanguage}
 - Second Language: ${languagePromptArgs.secondLanguage}
 Note: The context can contain various formats. Examples: "English", "en", "日本語", "ja"
@@ -106,10 +106,10 @@ fun createTranslationStrategy(
         }
     }
 
-    val decideTargetLanguage by node<String, String>("Decide Target Language") { input ->
+    val decideTargetLanguage by node<String, String>("Decide Target Language") { sourceLanguage ->
         llm.writeSession {
             updatePrompt {
-                decideTargetLanguagePrompt(input, languagePromptArgs)
+                decideTargetLanguagePrompt(sourceLanguage, languagePromptArgs)
             }
 
             requestLLMWithoutTools().content.also {

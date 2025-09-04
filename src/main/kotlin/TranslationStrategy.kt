@@ -1,8 +1,17 @@
 package org.example
 
+import ai.koog.agents.core.dsl.builder.forwardTo
 import ai.koog.agents.core.dsl.builder.strategy
 import ai.koog.prompt.dsl.PromptBuilder
 import model.LanguagePromptArgs
+import utility.splitTextByLinesWithinSize
+
+data class TranslationState(
+    val inputTexts: List<String> = emptyList(),
+    val outputTexts: List<String> = emptyList(),
+    val sourceLanguage: String? = null,
+    val targetLanguage: String? = null
+)
 
 fun PromptBuilder.detectSourceLanguagePrompt(
     text: String
@@ -21,7 +30,7 @@ Rules:
 }
 
 fun PromptBuilder.decideTargetLanguagePrompt(
-    input: String,
+    sourceLanguage: String,
     languagePromptArgs: LanguagePromptArgs
 ) {
     if (languagePromptArgs.targetLanguage != null) {
@@ -54,7 +63,7 @@ Rules:
 Determine the target language for translation and return it based on the context and logic.
             
 Context:
-- Input Text Language: $input
+- Input Text Language: $sourceLanguage
 - Native Language: ${languagePromptArgs.nativeLanguage}
 - Second Language: ${languagePromptArgs.secondLanguage}
 Note: The context can contain various formats. Examples: "English", "en", "日本語", "ja"
@@ -89,43 +98,52 @@ Rules:
 fun createTranslationStrategy(
     languagePromptArgs: LanguagePromptArgs
 ) = strategy<String, String>("GenTrans Strategy") {
-    var sourceLanguage: String? = null
-    var targetLanguageVar: String? = languagePromptArgs.targetLanguage
-    var inputText = ""
-
-    val detectSourceLanguage by node<String, String>("Detect Source Language") { input ->
+    val detectSourceLanguage by node<String, TranslationState>("Detect Source Language") { input ->
         llm.writeSession {
-            inputText = input
+            val inputTexts = splitTextByLinesWithinSize(input, 2000)
             updatePrompt {
-                detectSourceLanguagePrompt(inputText)
+                detectSourceLanguagePrompt(inputTexts.first())
             }
 
-            requestLLMWithoutTools().content.also {
-                sourceLanguage = it.trim()
-            }
+            val sourceLanguage = requestLLMWithoutTools().content.trim()
+            TranslationState(
+                inputTexts = inputTexts,
+                sourceLanguage = sourceLanguage,
+                targetLanguage = languagePromptArgs.targetLanguage
+            )
         }
     }
 
-    val decideTargetLanguage by node<String, String>("Decide Target Language") { input ->
+    val decideTargetLanguage by node<TranslationState, TranslationState>("Decide Target Language") { state ->
         llm.writeSession {
             updatePrompt {
-                decideTargetLanguagePrompt(input, languagePromptArgs)
+                decideTargetLanguagePrompt(state.sourceLanguage!!, languagePromptArgs)
             }
 
-            requestLLMWithoutTools().content.also {
-                targetLanguageVar = it.trim()
-            }
+            val targetLanguage = requestLLMWithoutTools().content.trim()
+            state.copy(targetLanguage = targetLanguage)
         }
     }
 
-    val translateByLLM by node<String, String>("Translate by LLM") {
+    val translateByLLM by node<TranslationState, TranslationState>("Translate by LLM") { state ->
         llm.writeSession {
             updatePrompt {
-                translatePrompt(sourceLanguage, targetLanguageVar, inputText)
+                translatePrompt(state.sourceLanguage, state.targetLanguage, state.inputTexts.first())
             }
-            requestLLMWithoutTools().content.removeSuffix("\n")
+            val translatedText = requestLLMWithoutTools().content.removeSuffix("\n")
+            state.copy(
+                inputTexts = state.inputTexts.drop(1),
+                outputTexts = state.outputTexts + translatedText
+            )
         }
     }
 
-    nodeStart then detectSourceLanguage then decideTargetLanguage then translateByLLM then nodeFinish
+    val finalizeTranslation by node<TranslationState, String>("Finalize Translation") { state ->
+        state.outputTexts.joinToString("\n")
+    }
+
+    nodeStart then detectSourceLanguage then decideTargetLanguage then translateByLLM
+    edge(translateByLLM forwardTo finalizeTranslation onCondition { it.inputTexts.isEmpty() })
+    edge(translateByLLM forwardTo translateByLLM onCondition { it.inputTexts.isNotEmpty() })
+    edge(finalizeTranslation forwardTo nodeFinish)
 }

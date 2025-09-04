@@ -6,6 +6,13 @@ import ai.koog.prompt.dsl.PromptBuilder
 import model.LanguagePromptArgs
 import utility.splitTextByLinesWithinSize
 
+data class TranslationState(
+    val inputTexts: List<String> = emptyList(),
+    val outputTexts: List<String> = emptyList(),
+    val sourceLanguage: String? = null,
+    val targetLanguage: String? = null
+)
+
 fun PromptBuilder.detectSourceLanguagePrompt(
     text: String
 ) {
@@ -91,48 +98,52 @@ Rules:
 fun createTranslationStrategy(
     languagePromptArgs: LanguagePromptArgs
 ) = strategy<String, String>("GenTrans Strategy") {
-    var sourceLanguage: String? = null
-    var targetLanguageVar: String? = languagePromptArgs.targetLanguage
-    val inputTexts = mutableListOf<String>()
-    val outputTexts = mutableListOf<String>()
-
-    val detectSourceLanguage by node<String, String>("Detect Source Language") { input ->
+    val detectSourceLanguage by node<String, TranslationState>("Detect Source Language") { input ->
         llm.writeSession {
-            inputTexts += splitTextByLinesWithinSize(input, 2000)
+            val inputTexts = splitTextByLinesWithinSize(input, 2000)
             updatePrompt {
                 detectSourceLanguagePrompt(inputTexts.first())
             }
 
-            requestLLMWithoutTools().content.also {
-                sourceLanguage = it.trim()
-            }
+            val sourceLanguage = requestLLMWithoutTools().content.trim()
+            TranslationState(
+                inputTexts = inputTexts,
+                sourceLanguage = sourceLanguage,
+                targetLanguage = languagePromptArgs.targetLanguage
+            )
         }
     }
 
-    val decideTargetLanguage by node<String, String>("Decide Target Language") { sourceLanguage ->
+    val decideTargetLanguage by node<TranslationState, TranslationState>("Decide Target Language") { state ->
         llm.writeSession {
             updatePrompt {
-                decideTargetLanguagePrompt(sourceLanguage, languagePromptArgs)
+                decideTargetLanguagePrompt(state.sourceLanguage!!, languagePromptArgs)
             }
 
-            requestLLMWithoutTools().content.also {
-                targetLanguageVar = it.trim()
-            }
+            val targetLanguage = requestLLMWithoutTools().content.trim()
+            state.copy(targetLanguage = targetLanguage)
         }
     }
 
-    val translateByLLM by node<String, String>("Translate by LLM") {
+    val translateByLLM by node<TranslationState, TranslationState>("Translate by LLM") { state ->
         llm.writeSession {
             updatePrompt {
-                translatePrompt(sourceLanguage, targetLanguageVar, inputTexts.first())
+                translatePrompt(state.sourceLanguage, state.targetLanguage, state.inputTexts.first())
             }
-            inputTexts.removeFirst()
-            outputTexts += requestLLMWithoutTools().content.removeSuffix("\n")
-            outputTexts.joinToString("\n")
+            val translatedText = requestLLMWithoutTools().content.removeSuffix("\n")
+            state.copy(
+                inputTexts = state.inputTexts.drop(1),
+                outputTexts = state.outputTexts + translatedText
+            )
         }
+    }
+
+    val finalizeTranslation by node<TranslationState, String>("Finalize Translation") { state ->
+        state.outputTexts.joinToString("\n")
     }
 
     nodeStart then detectSourceLanguage then decideTargetLanguage then translateByLLM
-    edge(translateByLLM forwardTo nodeFinish onCondition { inputTexts.isEmpty() })
-    edge(translateByLLM forwardTo translateByLLM onCondition { inputTexts.isNotEmpty() })
+    edge(translateByLLM forwardTo finalizeTranslation onCondition { it.inputTexts.isEmpty() })
+    edge(translateByLLM forwardTo translateByLLM onCondition { it.inputTexts.isNotEmpty() })
+    edge(finalizeTranslation forwardTo nodeFinish)
 }

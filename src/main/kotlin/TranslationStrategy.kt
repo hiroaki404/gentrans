@@ -1,8 +1,10 @@
 package org.example
 
+import ai.koog.agents.core.dsl.builder.forwardTo
 import ai.koog.agents.core.dsl.builder.strategy
 import ai.koog.prompt.dsl.PromptBuilder
 import model.LanguagePromptArgs
+import utility.splitTextByLinesWithinSize
 
 fun PromptBuilder.detectSourceLanguagePrompt(
     text: String
@@ -91,13 +93,14 @@ fun createTranslationStrategy(
 ) = strategy<String, String>("GenTrans Strategy") {
     var sourceLanguage: String? = null
     var targetLanguageVar: String? = languagePromptArgs.targetLanguage
-    var inputText = ""
+    val inputTexts = mutableListOf<String>()
+    val outputTexts = mutableListOf<String>()
 
     val detectSourceLanguage by node<String, String>("Detect Source Language") { input ->
         llm.writeSession {
-            inputText = input
+            inputTexts += splitTextByLinesWithinSize(input, 2000)
             updatePrompt {
-                detectSourceLanguagePrompt(inputText)
+                detectSourceLanguagePrompt(inputTexts.first())
             }
 
             requestLLMWithoutTools().content.also {
@@ -121,11 +124,15 @@ fun createTranslationStrategy(
     val translateByLLM by node<String, String>("Translate by LLM") {
         llm.writeSession {
             updatePrompt {
-                translatePrompt(sourceLanguage, targetLanguageVar, inputText)
+                translatePrompt(sourceLanguage, targetLanguageVar, inputTexts.first())
             }
-            requestLLMWithoutTools().content.removeSuffix("\n")
+            inputTexts.removeFirst()
+            outputTexts += requestLLMWithoutTools().content.removeSuffix("\n")
+            outputTexts.joinToString("\n")
         }
     }
 
-    nodeStart then detectSourceLanguage then decideTargetLanguage then translateByLLM then nodeFinish
+    nodeStart then detectSourceLanguage then decideTargetLanguage then translateByLLM
+    edge(translateByLLM forwardTo nodeFinish onCondition { inputTexts.isEmpty() })
+    edge(translateByLLM forwardTo translateByLLM onCondition { inputTexts.isNotEmpty() })
 }

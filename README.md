@@ -19,6 +19,7 @@
 - [Usage](#-usage)
 - [Configuration](#-configuration)
 - [Command Reference](#-command-reference)
+- [Limitations](#-limitations)
 - [Work In Progress (WIP)](#-work-in-progress-wip)
 - [Contributing](#-contributing)
 - [License](#-license)
@@ -256,6 +257,20 @@ OPTIONS:
     -h, --help             Print help information
         --version          Print version information
 ```
+
+---
+
+## ⚠️ Limitations
+
+Please be aware of the following limitations when translating long texts:
+
+### Long Text Input Constraints
+
+- **Language Detection Accuracy**: For long texts, automatic language detection is applied based on the initial chunk, which may not accurately represent the language of the entire text
+- **Contextual Continuity**: Since translation is performed in chunks, long texts may occasionally experience inconsistent connections between translated segments
+- **Line-Based Splitting**: Currently, long text chunking is performed by line breaks, so translation of long passages without line breaks may not be handled properly
+
+Due to these limitations, when translating long texts, it is recommended to either structure the text with appropriate line breaks or divide the text into manageable segments before translation.
 
 ---
 

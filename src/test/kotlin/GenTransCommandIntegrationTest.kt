@@ -75,7 +75,7 @@ class GenTransCommandIntegrationTest : StringSpec({
         withEnvironment("GENTRANS_NATIVE_LANGUAGE", "Japanese", OverrideMode.SetOrIgnore) {
             val command = createCommand()
             val inputText = "Hello"
-            // target言語を指定せずに実行（自動言語検出）
+            // Execute without specifying target language (auto language detection)
             val result = command.test(argv = ollamaOptions + inputText)
 
             result.stdout shouldContainIgnoringCase "こんにちは"
@@ -87,7 +87,7 @@ class GenTransCommandIntegrationTest : StringSpec({
         withEnvironment("GENTRANS_NATIVE_LANGUAGE", "Japanese", OverrideMode.SetOrIgnore) {
             val command = createCommand()
             val inputText = "おはようございます"
-            // target言語を指定せずに実行（自動言語検出：日本語→英語）
+            // Execute without specifying target language (auto language detection: Japanese → English)
             val result = command.test(argv = ollamaOptions + inputText)
 
             result.stdout shouldContainIgnoringCase "good morning"
@@ -105,7 +105,7 @@ class GenTransCommandIntegrationTest : StringSpec({
         ) {
             val command = createCommand()
             val inputText = "こんにちは"
-            // target言語を指定せずに実行（自動言語検出）
+            // Execute without specifying target language (auto language detection)
             val result = command.test(argv = ollamaOptions + inputText)
 
             result.stdout shouldContainIgnoringCase "bonjour"

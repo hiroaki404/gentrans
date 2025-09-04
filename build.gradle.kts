@@ -44,6 +44,9 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+    val isCI = System.getenv("CI") == "true"
+    val excludeTags = if (isCI) "integration" else ""
+    systemProperty("kotest.tags.exclude", excludeTags)
 }
 
 buildConfig {

@@ -49,6 +49,44 @@ tasks.test {
     systemProperty("kotest.tags.exclude", excludeTags)
 }
 
+// デバッグビルドかどうかの判定
+val isRunTask = gradle.startParameter.taskNames.any { it.contains("run") }
+val isDebugBuild = project.hasProperty("debug") && 
+    project.property("debug").toString().toBoolean()
+val enableDebug = isDebugBuild || isRunTask
+
+// ソース生成タスク
+tasks.register("generateBuildInfo") {
+    val outputDir = layout.buildDirectory.dir("generated/kotlin")
+    outputs.dir(outputDir)
+    
+    doLast {
+        val buildInfoFile = outputDir.get().file("org/example/BuildInfo.kt").asFile
+        buildInfoFile.parentFile.mkdirs()
+        buildInfoFile.writeText("""
+            package org.example
+            
+            object BuildInfo {
+                const val IS_DEBUG = $enableDebug
+                const val VERSION = "${version}"
+            }
+        """.trimIndent())
+    }
+}
+
+// メインのcompileKotlinタスクが生成されたソースを使用するように設定
+tasks.named("compileKotlin") {
+    dependsOn("generateBuildInfo")
+}
+
+sourceSets {
+    main {
+        kotlin {
+            srcDir(layout.buildDirectory.dir("generated/kotlin"))
+        }
+    }
+}
+
 buildConfig {
     buildConfigField("String", "VERSION", "\"${version}\"")
 }

@@ -42,6 +42,10 @@ class GenTransCommand(
     private val getLanguagePromptArgsUseCase: GetLanguagePromptArgsUseCase = GetLanguagePromptArgsUseCase()
 
     override suspend fun run() {
+        if (BuildInfo.IS_DEBUG) {
+            echo("DEBUG: GenTrans v${BuildInfo.VERSION}")
+        }
+
         val text = if (targetText.isNotEmpty()) {
             targetText.joinToString("\n")
         } else {

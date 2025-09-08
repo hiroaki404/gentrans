@@ -51,7 +51,7 @@ tasks.test {
 
 // デバッグビルドかどうかの判定
 val isRunTask = gradle.startParameter.taskNames.any { it.contains("run") }
-val isDebugBuild = project.hasProperty("debug") && 
+val isDebugBuild = project.hasProperty("debug") &&
     project.property("debug").toString().toBoolean()
 val enableDebug = isDebugBuild || isRunTask
 
@@ -59,23 +59,30 @@ val enableDebug = isDebugBuild || isRunTask
 tasks.register("generateBuildInfo") {
     val outputDir = layout.buildDirectory.dir("generated/kotlin")
     outputs.dir(outputDir)
-    
+
     doLast {
         val buildInfoFile = outputDir.get().file("org/example/BuildInfo.kt").asFile
         buildInfoFile.parentFile.mkdirs()
-        buildInfoFile.writeText("""
+        buildInfoFile.writeText(
+            """
             package org.example
             
             object BuildInfo {
                 const val IS_DEBUG = $enableDebug
-                const val VERSION = "${version}"
+                const val VERSION = "$version"
             }
-        """.trimIndent())
+            """.trimIndent()
+        )
     }
 }
 
 // メインのcompileKotlinタスクが生成されたソースを使用するように設定
 tasks.named("compileKotlin") {
+    dependsOn("generateBuildInfo")
+}
+
+// ktlintタスクもgenerateBuildInfoに依存するように設定
+tasks.withType<org.jlleitschuh.gradle.ktlint.tasks.BaseKtLintCheckTask> {
     dependsOn("generateBuildInfo")
 }
 

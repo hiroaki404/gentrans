@@ -40,6 +40,7 @@ dependencies {
     implementation(libs.slf4j.simple)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.serialization.core)
+    implementation(libs.koog.agents.features.opentelemetry)
 }
 
 tasks.test {

@@ -1,6 +1,8 @@
 package org.example
 
 import ai.koog.agents.core.agent.AIAgent
+import ai.koog.agents.features.opentelemetry.feature.OpenTelemetry
+import ai.koog.agents.features.opentelemetry.integration.langfuse.addLangfuseExporter
 import ai.koog.prompt.executor.llms.SingleLLMPromptExecutor
 import ai.koog.prompt.executor.model.PromptExecutor
 import com.github.ajalt.clikt.command.SuspendingCliktCommand
@@ -62,7 +64,12 @@ class GenTransCommand(
             executor = executor,
             llmModel = llmModel,
             strategy = strategy,
-        )
+        ) {
+            install(OpenTelemetry) {
+                setVerbose(true)
+                addLangfuseExporter()
+            }
+        }
 
         val result = agent.run(text)
         echo(result)

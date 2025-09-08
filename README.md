@@ -97,6 +97,10 @@ For debugging and development:
 ./build/install/gentrans/bin/gentrans "hello"
 ```
 
+Note: If you are debugging, you will need ollama for testing and langfuse for tracing.
+I think it's currently difficult to contribute, so I will prepare it eventually, but please let me know by creating an
+issue.
+
 ---
 
 ## Usage

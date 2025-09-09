@@ -9,6 +9,7 @@ import com.github.ajalt.clikt.command.SuspendingCliktCommand
 import com.github.ajalt.clikt.command.main
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.arguments.multiple
+import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.versionOption
 import domain.GetExecutorUseCase
@@ -37,6 +38,10 @@ class GenTransCommand(
         names = arrayOf("-t", "--to"),
         help = "Specify the target language. Since the language is interpreted by an LLM, you can use various formats like `English`, `en`, or even `日本語`."
     )
+    private val enableTrace: Boolean by option(
+        names = arrayOf("--trace"),
+        help = "Enable OpenTelemetry tracing. Only available in debug builds."
+    ).flag()
 
     private val targetText: List<String> by argument(help = "Text to translate. Reads from stdin if not provided.").multiple()
 
@@ -61,7 +66,7 @@ class GenTransCommand(
             llmModel = llmModel,
             strategy = strategy,
         ) {
-            if (BuildInfo.IS_DEBUG) {
+            if (BuildInfo.IS_DEBUG && enableTrace) {
                 install(OpenTelemetry) {
                     setVerbose(true)
                     addLangfuseExporter()

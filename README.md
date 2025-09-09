@@ -99,6 +99,7 @@ For debugging and development:
 
 Note: If you are debugging, you will need ollama for testing.
 If you want to use tracing for debug, you need to set up langfuse, and use `--trace` debug only option.
+If you have a trouble, please `./gradlew clean` or make an issue.
 
 ---
 

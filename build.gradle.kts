@@ -40,6 +40,7 @@ dependencies {
     implementation(libs.slf4j.simple)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.serialization.core)
+    implementation(libs.koog.agents.features.opentelemetry)
 }
 
 tasks.test {
@@ -47,6 +48,51 @@ tasks.test {
     val isCI = System.getenv("CI") == "true"
     val excludeTags = if (isCI) "integration" else ""
     systemProperty("kotest.tags.exclude", excludeTags)
+}
+
+// デバッグビルドかどうかの判定
+val isRunTask = gradle.startParameter.taskNames.any { it.contains("run") }
+val isDebugBuild = project.hasProperty("debug") &&
+    project.property("debug").toString().toBoolean()
+val enableDebug = isDebugBuild || isRunTask
+
+// ソース生成タスク
+tasks.register("generateBuildInfo") {
+    val outputDir = layout.buildDirectory.dir("generated/kotlin")
+    outputs.dir(outputDir)
+
+    doLast {
+        val buildInfoFile = outputDir.get().file("org/example/BuildInfo.kt").asFile
+        buildInfoFile.parentFile.mkdirs()
+        buildInfoFile.writeText(
+            """
+            package org.example
+            
+            object BuildInfo {
+                const val IS_DEBUG = $enableDebug
+                const val VERSION = "$version"
+            }
+            """.trimIndent()
+        )
+    }
+}
+
+// メインのcompileKotlinタスクが生成されたソースを使用するように設定
+tasks.named("compileKotlin") {
+    dependsOn("generateBuildInfo")
+}
+
+// ktlintタスクもgenerateBuildInfoに依存するように設定
+tasks.withType<org.jlleitschuh.gradle.ktlint.tasks.BaseKtLintCheckTask> {
+    dependsOn("generateBuildInfo")
+}
+
+sourceSets {
+    main {
+        kotlin {
+            srcDir(layout.buildDirectory.dir("generated/kotlin"))
+        }
+    }
 }
 
 buildConfig {

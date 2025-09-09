@@ -45,6 +45,7 @@ private fun getLLModel(llModelName: String, providerName: String): LLModel {
         capabilities = listOf(
             LLMCapability.Completion,
         ),
+        contextLength = 1_047_57, // FIXME
     )
 }
 

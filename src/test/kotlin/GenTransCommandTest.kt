@@ -58,4 +58,35 @@ class GenTransCommandTest : StringSpec({
         result.stdout shouldBe "Bonjour le monde!\n"
         result.statusCode shouldBe 0
     }
+
+    "test GenTransCommand with --summary option" {
+        val summaryMockLLMApi = getMockExecutor {
+            // Mock for language detection prompts
+            mockLLMAnswer("Japanese") onCondition { it.contains("Identify the natural language of the following text") }
+
+            // For Japanese → English translation (when targetLanguage is not specified)
+            mockLLMAnswer("English") onCondition {
+                it.contains("Determine the target language for translation") &&
+                    it.contains("Input Text Language: Japanese")
+            }
+
+            // Mock for summary processing
+            mockLLMAnswer("Summarized: Hello") onCondition {
+                it.contains("Summarize the following text") &&
+                    it.contains("これは長いテキストの内容です")
+            }
+
+            // Mock for translation after summary
+            mockLLMAnswer("Summarized: Hello") onCondition {
+                it.contains("Translate the following text") &&
+                    it.contains("Summarized: Hello")
+            }
+        }
+
+        val command = GenTransCommand({ _, _ -> summaryMockLLMApi })
+        val result = command.test(argv = arrayOf("--summary", "これは長いテキストの内容です"))
+
+        result.stdout shouldBe "Summarized: Hello\n"
+        result.statusCode shouldBe 0
+    }
 })

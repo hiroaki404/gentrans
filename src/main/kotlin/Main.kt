@@ -42,6 +42,10 @@ class GenTransCommand(
         names = arrayOf("--trace"),
         help = "Enable OpenTelemetry tracing. Only available in debug builds."
     ).flag()
+    private val shouldSummary: Boolean by option(
+        names = arrayOf("-s", "--summary"),
+        help = "Enable text summarization before translation. Useful for long texts."
+    ).flag()
 
     private val targetText: List<String> by argument(help = "Text to translate. Reads from stdin if not provided.").multiple()
 
@@ -59,7 +63,7 @@ class GenTransCommand(
         val llmModel = getLLModelUseCase(model, provider)
         val languagePromptArgs = getLanguagePromptArgsUseCase(targetLanguage)
 
-        val strategy = createTranslationStrategy(languagePromptArgs)
+        val strategy = createTranslationStrategy(languagePromptArgs, shouldSummary)
 
         val agent = AIAgent(
             executor = executor,

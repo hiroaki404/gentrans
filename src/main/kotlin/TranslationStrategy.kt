@@ -78,6 +78,12 @@ Translation Logic:
     }
 }
 
+fun PromptBuilder.summaryPrompt(
+    text: String,
+) {
+    user("Summarize the following text:\n\n$text")
+}
+
 fun PromptBuilder.translatePrompt(
     sourceLanguage: String?,
     targetLanguage: String?,
@@ -97,7 +103,8 @@ Rules:
 }
 
 fun createTranslationStrategy(
-    languagePromptArgs: LanguagePromptArgs
+    languagePromptArgs: LanguagePromptArgs,
+    shouldSummary: Boolean
 ) = strategy<String, String>("GenTrans Strategy") {
     val detectSourceLanguage by node<String, TranslationState>("Detect Source Language") { input ->
         llm.writeSession {
@@ -126,6 +133,17 @@ fun createTranslationStrategy(
         }
     }
 
+    val summaryByLLM by node<TranslationState, TranslationState>("Summary by LLM") { state ->
+        llm.writeSession {
+            clearHistory()
+            updatePrompt {
+                summaryPrompt(state.inputTexts.joinToString("\n"))
+            }
+            val summarizedText = requestLLMWithoutTools().content.removeSuffix("\n")
+            state.copy(inputTexts = listOf(summarizedText))
+        }
+    }
+
     val translateByLLM by node<TranslationState, TranslationState>("Translate by LLM") { state ->
         llm.writeSession {
             clearHistory()
@@ -144,7 +162,14 @@ fun createTranslationStrategy(
         state.outputTexts.joinToString("\n")
     }
 
-    nodeStart then detectSourceLanguage then decideTargetLanguage then translateByLLM
+    nodeStart then detectSourceLanguage then decideTargetLanguage
+
+    if (shouldSummary) {
+        decideTargetLanguage then summaryByLLM then translateByLLM
+    } else {
+        decideTargetLanguage then translateByLLM
+    }
+
     edge(translateByLLM forwardTo finalizeTranslation onCondition { it.inputTexts.isEmpty() })
     edge(translateByLLM forwardTo translateByLLM onCondition { it.inputTexts.isNotEmpty() })
     edge(finalizeTranslation forwardTo nodeFinish)

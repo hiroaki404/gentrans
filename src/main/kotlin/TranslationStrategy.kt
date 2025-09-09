@@ -27,7 +27,15 @@ Rules:
 - Do not include any other phrases or explanations
         """.trimIndent()
     )
-    user("Identify the natural language of the following text:\n\n$text")
+    user(
+        """
+Identify the natural language of the following text:
+
+---
+
+$text
+        """.trimIndent()
+    )
 }
 
 fun PromptBuilder.decideTargetLanguagePrompt(
@@ -81,7 +89,21 @@ Translation Logic:
 fun PromptBuilder.summaryPrompt(
     text: String,
 ) {
-    user("Summarize the following text:\n\n$text")
+    system(
+        """
+You are an assistant who summarizes long texts.
+        """.trimIndent()
+    )
+    user(
+        """
+Please concisely summarize the following text, including all the important points. Use bullet points, etc., as needed to make it easy to understand and concise. For clarity, please output the first half as a bulleted list of short sentences if necessary, and the second half in concise sentences. If necessary, you can output only the bulleted list or only the concise sentences, and keep it within about 800 characters.
+Summarize the following text:
+
+---
+
+$text
+        """.trimIndent()
+    )
 }
 
 fun PromptBuilder.translatePrompt(
@@ -99,7 +121,15 @@ Rules:
         """.trimIndent()
     )
 
-    user("Translate the following text from $sourceLanguage to $targetLanguage:\n\n$text")
+    user(
+        """
+Translate the following text from $sourceLanguage to $targetLanguage:
+
+---
+
+$text
+        """.trimIndent()
+    )
 }
 
 fun createTranslationStrategy(

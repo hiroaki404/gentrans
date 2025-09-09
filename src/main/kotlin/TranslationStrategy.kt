@@ -2,6 +2,7 @@ package org.example
 
 import ai.koog.agents.core.dsl.builder.forwardTo
 import ai.koog.agents.core.dsl.builder.strategy
+import ai.koog.agents.core.dsl.extension.clearHistory
 import ai.koog.prompt.dsl.PromptBuilder
 import model.LanguagePromptArgs
 import utility.splitTextByLinesWithinSize
@@ -127,6 +128,7 @@ fun createTranslationStrategy(
 
     val translateByLLM by node<TranslationState, TranslationState>("Translate by LLM") { state ->
         llm.writeSession {
+            clearHistory()
             updatePrompt {
                 translatePrompt(state.sourceLanguage, state.targetLanguage, state.inputTexts.first())
             }

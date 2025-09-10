@@ -10,6 +10,7 @@ import utility.splitTextByLinesWithinSize
 data class TranslationState(
     val inputTexts: List<String> = emptyList(),
     val outputTexts: List<String> = emptyList(),
+    val summarizedIntermediateTexts: List<String> = emptyList(),
     val sourceLanguage: String? = null,
     val targetLanguage: String? = null
 )
@@ -164,13 +165,34 @@ fun createTranslationStrategy(
     }
 
     val summaryByLLM by node<TranslationState, TranslationState>("Summary by LLM") { state ->
+        if (state.inputTexts.isEmpty()) {
+            return@node state
+        }
+
         llm.writeSession {
             clearHistory()
             updatePrompt {
-                summaryPrompt(state.inputTexts.joinToString("\n"))
+                summaryPrompt(state.inputTexts.first())
             }
             val summarizedText = requestLLMWithoutTools().content.removeSuffix("\n")
-            state.copy(inputTexts = listOf(summarizedText))
+            state.copy(
+                inputTexts = state.inputTexts.drop(1),
+                summarizedIntermediateTexts = state.summarizedIntermediateTexts + summarizedText
+            )
+        }
+    }
+
+    val finalizeSummary by node<TranslationState, TranslationState>("Finalize Summary") { state ->
+        llm.writeSession {
+            clearHistory()
+            updatePrompt {
+                summaryPrompt(state.summarizedIntermediateTexts.joinToString("\n"))
+            }
+            val finalSummaryText = requestLLMWithoutTools().content.removeSuffix("\n")
+            state.copy(
+                inputTexts = listOf(finalSummaryText),
+                summarizedIntermediateTexts = emptyList()
+            )
         }
     }
 
@@ -195,7 +217,10 @@ fun createTranslationStrategy(
     nodeStart then detectSourceLanguage then decideTargetLanguage
 
     if (shouldSummary) {
-        decideTargetLanguage then summaryByLLM then translateByLLM
+        decideTargetLanguage then summaryByLLM
+        edge(summaryByLLM forwardTo finalizeSummary onCondition { it.inputTexts.isEmpty() })
+        edge(summaryByLLM forwardTo summaryByLLM onCondition { it.inputTexts.isNotEmpty() })
+        finalizeSummary then translateByLLM
     } else {
         decideTargetLanguage then translateByLLM
     }

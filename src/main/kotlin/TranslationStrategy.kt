@@ -107,6 +107,36 @@ $text
     )
 }
 
+fun PromptBuilder.refineSummaryPrompt(
+    previousSummary: String,
+    newChunk: String
+) {
+    system(
+        """
+You are an assistant who refines and improves summaries by incorporating new information.
+        """.trimIndent()
+    )
+    user(
+        """
+I have an existing summary and new text to add. Please create an improved, integrated summary that:
+1. Incorporates all important information from both the existing summary and new text
+2. Maintains consistency and coherence
+3. Keeps the refined summary within about 800 characters
+4. Uses bullet points and concise sentences as needed for clarity
+
+Existing Summary:
+---
+$previousSummary
+
+New Text to Integrate:
+---
+$newChunk
+
+Please provide the refined, integrated summary:
+        """.trimIndent()
+    )
+}
+
 fun PromptBuilder.translatePrompt(
     sourceLanguage: String?,
     targetLanguage: String?,
@@ -171,29 +201,35 @@ fun createTranslationStrategy(
 
         llm.writeSession {
             clearHistory()
-            updatePrompt {
-                summaryPrompt(state.inputTexts.first())
+
+            val currentChunk = state.inputTexts.first()
+            val summarizedText = if (state.summarizedIntermediateTexts.isEmpty()) {
+                updatePrompt {
+                    summaryPrompt(currentChunk)
+                }
+                requestLLMWithoutTools().content.removeSuffix("\n")
+            } else {
+                // use refine approach https://note.com/izai/n/n23698de159c5
+                val previousSummary = state.summarizedIntermediateTexts.last()
+                updatePrompt {
+                    refineSummaryPrompt(previousSummary, currentChunk)
+                }
+                val refinedSummary = requestLLMWithoutTools().content.removeSuffix("\n")
+                refinedSummary
             }
-            val summarizedText = requestLLMWithoutTools().content.removeSuffix("\n")
+
             state.copy(
                 inputTexts = state.inputTexts.drop(1),
-                summarizedIntermediateTexts = state.summarizedIntermediateTexts + summarizedText
+                summarizedIntermediateTexts = listOf(summarizedText)
             )
         }
     }
 
     val finalizeSummary by node<TranslationState, TranslationState>("Finalize Summary") { state ->
-        llm.writeSession {
-            clearHistory()
-            updatePrompt {
-                summaryPrompt(state.summarizedIntermediateTexts.joinToString("\n"))
-            }
-            val finalSummaryText = requestLLMWithoutTools().content.removeSuffix("\n")
-            state.copy(
-                inputTexts = listOf(finalSummaryText),
-                summarizedIntermediateTexts = emptyList()
-            )
-        }
+        state.copy(
+            inputTexts = state.summarizedIntermediateTexts,
+            summarizedIntermediateTexts = emptyList()
+        )
     }
 
     val translateByLLM by node<TranslationState, TranslationState>("Translate by LLM") { state ->

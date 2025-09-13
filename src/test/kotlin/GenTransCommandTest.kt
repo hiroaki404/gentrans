@@ -89,4 +89,44 @@ class GenTransCommandTest : StringSpec({
         result.stdout shouldBe "Summarized: Hello\n"
         result.statusCode shouldBe 0
     }
+
+    "test GenTransCommand with refine summary for multiple chunks" {
+        val refineMockLLMApi = getMockExecutor {
+            // Mock for language detection prompts
+            mockLLMAnswer("Japanese") onCondition { it.contains("Identify the natural language of the following text") }
+
+            // For Japanese → English translation
+            mockLLMAnswer("English") onCondition {
+                it.contains("Determine the target language for translation") &&
+                    it.contains("Input Text Language: Japanese")
+            }
+
+            // Mock for any summary prompts (both normal and refine)
+            mockLLMAnswer("Summary: First chunk") onCondition {
+                it.contains("Summarize the following text") &&
+                    !it.contains("Existing Summary:")
+            }
+
+            // Mock for refine prompts
+            mockLLMAnswer("Refined Summary: Combined chunks") onCondition {
+                it.contains("Existing Summary:")
+            }
+
+            // Mock for final translation
+            mockLLMAnswer("Translated: Combined summary") onCondition {
+                it.contains("Translate the following text")
+            }
+        }
+
+        // Create text that will definitely be split into multiple chunks (over 2000 chars per chunk)
+        val chunk1 = "これは技術に関する最初のチャンクです。" + "A".repeat(2000)
+        val chunk2 = "これはビジネスに関する2番目のチャンクです。" + "B".repeat(2000)
+        val longText = "$chunk1\n$chunk2"
+
+        val command = GenTransCommand({ _, _ -> refineMockLLMApi })
+        val result = command.test(argv = arrayOf("--summary", longText))
+
+        result.stdout shouldBe "Translated: Combined summary\n"
+        result.statusCode shouldBe 0
+    }
 })

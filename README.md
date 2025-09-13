@@ -277,6 +277,7 @@ OPTIONS:
                            AI provider to use. Supported providers are `google`, `openai`, `anthropic`, `meta`, `alibaba`, `openrouter`, and `ollama`.
         --model <MODEL>    AI model to use. e.g. `gemini-2.0-flash`, `gpt-4o`, `claude-3-opus`, `gemma3n:latest`, `llama3.2:latest`. Supported models depend on the Koog library. See documentation for details.
     -t, --to <LANGUAGE>    Specify the target language. Since the language is interpreted by an LLM, you can use various formats like `English`, `en`, or even `日本語`.
+    -s, --summary          Enable text summarization before translation. Useful for long texts.
     -h, --help             Print help information
         --version          Print version information
 ```
@@ -310,7 +311,7 @@ The following features are planned but not yet implemented:
     - Multiple provider/model profiles with easy switching.
 - **Advanced Translation Options:**
     - `-f`, `--from <LANGUAGE>`: Specify the source language.
-    - `-s`, `--style <STYLE>`: Define the translation style (e.g., `formal`, `casual`).
+    - `-T`, `--tone <TONE>`: Define the translation tone/style (e.g., `formal`, `casual`, `technical`).
 - **`config` Subcommand:**
     - A dedicated command (`gentrans config`) to easily manage settings (`set`, `get`, `list`).
 

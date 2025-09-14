@@ -45,7 +45,9 @@ private fun getLLModel(llModelName: String, providerName: String): LLModel {
         capabilities = listOf(
             LLMCapability.Completion,
         ),
-        contextLength = 1_047_57, // FIXME
+        // FIXME: Due to the following changes, it is necessary to specify the appropriate contentLength for each model.
+        // https://github.com/JetBrains/koog/pull/438
+        contextLength = 1_047_57,
     )
 }
 

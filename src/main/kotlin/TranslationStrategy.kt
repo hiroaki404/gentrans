@@ -25,7 +25,7 @@ fun createTranslationStrategy(
 ) = strategy<String, String>("GenTrans Strategy") {
     val detectSourceLanguage by node<String, TranslationState>("Detect Source Language") { input ->
         llm.writeSession {
-            val inputTexts = splitTextByLinesWithinSize(input, 2000)
+            val inputTexts = splitTextByLinesWithinSize(input, 20000)
             updatePrompt {
                 detectSourceLanguagePrompt(inputTexts.first())
             }

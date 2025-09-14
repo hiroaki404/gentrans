@@ -40,8 +40,10 @@ class GenTransCommand(
     )
     private val enableTrace: Boolean by option(
         names = arrayOf("--trace"),
-        help = "Enable OpenTelemetry tracing. Only available in debug builds."
+        help = "Enable OpenTelemetry tracing.",
+        hidden = !BuildInfo.IS_DEBUG
     ).flag()
+
     private val shouldSummary: Boolean by option(
         names = arrayOf("-s", "--summary"),
         help = "Enable text summarization before translation. Useful for long texts."

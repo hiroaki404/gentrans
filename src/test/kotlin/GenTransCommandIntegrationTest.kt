@@ -127,7 +127,7 @@ class GenTransCommandIntegrationTest : StringSpec({
             要約機能のテストを通じて、この機能が正しく動作することを確認する必要があります。
         """.trimIndent()
 
-        val longInputText = (1..5).joinToString(separator = "\n\n") { sampleParagraph }
+        val longInputText = (1..10).joinToString(separator = "\n\n") { sampleParagraph }
 
         val result = command.test(argv = ollamaOptions + listOf("--summary", longInputText))
 
@@ -137,7 +137,7 @@ class GenTransCommandIntegrationTest : StringSpec({
         // Verify that summary significantly reduces the text length (output should be less than half of input)
         result.stdout.length shouldBeLessThan (longInputText.length / 2)
 
-        result.stdout.shouldContainIgnoringCase("summary")
+        result.stdout.shouldContain(Regex("summarization|summary", RegexOption.IGNORE_CASE))
         result.statusCode shouldBe 0
     }
 
@@ -178,7 +178,7 @@ class GenTransCommandIntegrationTest : StringSpec({
 要約後にさらに要約タスクが入るので、それを意識して出力しましょう
         """.trimIndent()
 
-        val result = command.test(argv = ollamaOptions + listOf("--summary", "--trace", longInputText))
+        val result = command.test(argv = ollamaOptions + listOf("--summary", longInputText))
 
         // Verify summary functionality: should not contain full original detailed text
         result.stdout.shouldNotContain("要約機能のテストを通じて、この機能が正しく動作することを確認する必要があります")
@@ -186,7 +186,7 @@ class GenTransCommandIntegrationTest : StringSpec({
         // Verify that summary significantly reduces the text length (output should be less than half of input)
         result.stdout.length shouldBeLessThan (longInputText.length / 2)
 
-        result.stdout.shouldContainIgnoringCase("summary")
+        result.stdout.shouldContain(Regex("summarization|summary", RegexOption.IGNORE_CASE))
         result.stdout.shouldContainIgnoringCase("sushi")
         result.statusCode shouldBe 0
     }

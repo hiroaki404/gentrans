@@ -37,6 +37,7 @@ translation directly in your terminal.
 
 - **Direct Translation** - Translate text directly from command-line arguments.
 - **Pipe Support** - Read text from standard input (stdin) to work seamlessly with pipes (`|`).
+- **Text Summarization** - Summarize long texts before translation using the `-s` or `--summary` option.
 - **Multiple AI Providers** - Support for multiple AI providers (e.g., OpenAI, Gemini).
 - **Model Selection** - Select specific models for translation.
 - **Environment Variable Support** - Configure API keys and settings via environment variables.

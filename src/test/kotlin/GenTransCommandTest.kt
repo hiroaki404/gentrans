@@ -1,5 +1,4 @@
 import ai.koog.agents.testing.tools.getMockExecutor
-import ai.koog.agents.testing.tools.mockLLMAnswer
 import com.github.ajalt.clikt.command.test
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe

@@ -68,7 +68,7 @@ class GenTransCommand(
         val strategy = createTranslationStrategy(languagePromptArgs, shouldSummary)
 
         val agent = AIAgent(
-            executor = executor,
+            promptExecutor = executor,
             llmModel = llmModel,
             strategy = strategy,
         ) {

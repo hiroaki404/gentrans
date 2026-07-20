@@ -52,3 +52,5 @@ bin/
 .mcp.json
 CLAUDE.local.md
 .serena
+
+local-docs/

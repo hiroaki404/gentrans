@@ -49,6 +49,7 @@ bin/
 
 ### Claude Configuration ###
 .claude/settings.local.json
+.claude/worktrees/
 .mcp.json
 CLAUDE.local.md
 .serena

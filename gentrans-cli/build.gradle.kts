@@ -41,48 +41,10 @@ val isDebugBuild = project.hasProperty("debug") &&
     project.property("debug").toString().toBoolean()
 val enableDebug = isDebugBuild || isRunTask
 
-// ソース生成タスク
-tasks.register("generateBuildInfo") {
-    val outputDir = layout.buildDirectory.dir("generated/kotlin")
-    outputs.dir(outputDir)
-
-    doLast {
-        val buildInfoFile = outputDir.get().file("io/github/hiroaki404/gentrans/cli/BuildInfo.kt").asFile
-        buildInfoFile.parentFile.mkdirs()
-        buildInfoFile.writeText(
-            """
-            package io.github.hiroaki404.gentrans.cli
-
-            object BuildInfo {
-                const val IS_DEBUG = $enableDebug
-                const val VERSION = "$version"
-            }
-            """.trimIndent()
-        )
-    }
-}
-
-// メインのcompileKotlinタスクが生成されたソースを使用するように設定
-tasks.named("compileKotlin") {
-    dependsOn("generateBuildInfo")
-}
-
-// ktlintタスクもgenerateBuildInfoに依存するように設定
-tasks.withType<org.jlleitschuh.gradle.ktlint.tasks.BaseKtLintCheckTask> {
-    dependsOn("generateBuildInfo")
-}
-
-sourceSets {
-    main {
-        kotlin {
-            srcDir(layout.buildDirectory.dir("generated/kotlin"))
-        }
-    }
-}
-
 buildConfig {
     packageName("io.github.hiroaki404.gentrans.cli")
     buildConfigField("String", "VERSION", "\"${version}\"")
+    buildConfigField("Boolean", "IS_DEBUG", enableDebug.toString())
 }
 
 application {

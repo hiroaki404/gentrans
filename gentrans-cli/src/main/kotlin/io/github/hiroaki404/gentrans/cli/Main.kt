@@ -40,7 +40,7 @@ class GenTransCommand(
     private val enableTrace: Boolean by option(
         names = arrayOf("--trace"),
         help = "Enable OpenTelemetry tracing.",
-        hidden = !BuildInfo.IS_DEBUG
+        hidden = !BuildConfig.IS_DEBUG
     ).flag()
 
     private val shouldSummary: Boolean by option(
@@ -71,7 +71,7 @@ class GenTransCommand(
             llmModel = llmModel,
             strategy = strategy,
         ) {
-            if (BuildInfo.IS_DEBUG && enableTrace) {
+            if (BuildConfig.IS_DEBUG && enableTrace) {
                 install(OpenTelemetry) {
                     setVerbose(true)
                     addLangfuseExporter()

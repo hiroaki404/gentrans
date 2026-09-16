@@ -2,6 +2,8 @@ plugins {
     id("buildsrc.convention.kotlin-jvm")
 }
 
+group = "io.github.hiroaki404"
+
 repositories {
     mavenCentral()
 }

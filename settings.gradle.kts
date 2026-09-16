@@ -14,3 +14,4 @@ enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 rootProject.name = "gentrans"
 include(":gentrans-core")
+include(":gentrans-cli")

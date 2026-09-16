@@ -76,7 +76,7 @@ For development or if you want to build from source:
 git clone https://github.com/hiroaki404/gentrans.git
 cd gentrans
 ./gradlew build
-./build/install/gentrans/bin/gentrans --version
+./gentrans-cli/build/install/gentrans/bin/gentrans --version
 ```
 
 #### 🐛 Debug Mode
@@ -85,17 +85,17 @@ For debugging and development:
 
 ```bash
 # Debug mode with verbose logging
-./gradlew run --args="hello"
+./gradlew :gentrans-cli:run --args="hello"
 
 # Explicit debug build
 ./gradlew -Pdebug=true installDist
-./build/install/gentrans/bin/gentrans "hello"
+./gentrans-cli/build/install/gentrans/bin/gentrans "hello"
 
 # Production build (no debug logs)
 ./gradlew installDist
 # or
 ./gradlew build
-./build/install/gentrans/bin/gentrans "hello"
+./gentrans-cli/build/install/gentrans/bin/gentrans "hello"
 ```
 
 Note: If you are debugging, you will need ollama for testing.

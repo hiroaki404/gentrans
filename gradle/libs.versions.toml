@@ -1,20 +1,26 @@
 [versions]
 cliVersion = "0.3.1"
 pluginVersion = "0.1.0"
-kotlin = "2.2.0"
+kotlin = "2.3.10"
 shadow = "8.1.1"
 clikt = "5.0.3"
-koogAgents = "0.5.2"
+koogAgents = "1.2.0"
+koogGoogle = "1.2.0-beta"
 buildconfig = "5.6.7"
 slf4j = "2.0.17"
 kotest = "5.9.1"
 ktlint = "13.0.0"
-kotlinx-serialization = "1.8.1"
+kotlinx-serialization = "1.10.0"
 
 [libraries]
 kotlinGradlePlugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 clikt = { module = "com.github.ajalt.clikt:clikt", version.ref = "clikt" }
-koog-agents = { module = "ai.koog:koog-agents", version.ref = "koogAgents" }
+koog-agents-core = { module = "ai.koog:agents-core", version.ref = "koogAgents" }
+koog-client-openai = { module = "ai.koog:prompt-executor-openai-client", version.ref = "koogAgents" }
+koog-client-anthropic = { module = "ai.koog:prompt-executor-anthropic-client", version.ref = "koogAgents" }
+koog-client-ollama = { module = "ai.koog:prompt-executor-ollama-client", version.ref = "koogAgents" }
+koog-client-google = { module = "ai.koog:prompt-executor-google-client", version.ref = "koogGoogle" }
+koog-http-client-java = { module = "ai.koog:http-client-java", version.ref = "koogAgents" }
 koog-agents-test = { module = "ai.koog:agents-test", version.ref = "koogAgents" }
 koog-agents-features-opentelemetry = { module = "ai.koog:agents-features-opentelemetry", version.ref = "koogAgents" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }

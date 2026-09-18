@@ -1,6 +1,6 @@
 package io.github.hiroaki404.gentrans.cli
 
-import ai.koog.prompt.executor.llms.SingleLLMPromptExecutor
+import ai.koog.prompt.executor.model.PromptExecutor
 import ai.koog.prompt.executor.ollama.client.OllamaClient
 import com.github.ajalt.clikt.command.test
 import io.kotest.core.annotation.Tags
@@ -19,7 +19,7 @@ class GenTransCommandIntegrationTest : StringSpec({
     val ollamaOptions = listOf("--provider", "ollama", "--model", "gemma3n:latest")
 
     fun createCommand() = GenTransCommand { _, _ ->
-        SingleLLMPromptExecutor(OllamaClient())
+        PromptExecutor.builder().addClient(OllamaClient()).build()
     }
 
     "test GenTransCommand with real LLM" {

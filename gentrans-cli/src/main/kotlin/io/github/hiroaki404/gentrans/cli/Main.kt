@@ -3,7 +3,6 @@ package io.github.hiroaki404.gentrans.cli
 import ai.koog.agents.core.agent.AIAgent
 import ai.koog.agents.features.opentelemetry.feature.OpenTelemetry
 import ai.koog.agents.features.opentelemetry.integration.langfuse.addLangfuseExporter
-import ai.koog.prompt.executor.llms.SingleLLMPromptExecutor
 import ai.koog.prompt.executor.model.PromptExecutor
 import com.github.ajalt.clikt.command.SuspendingCliktCommand
 import com.github.ajalt.clikt.command.main
@@ -19,7 +18,7 @@ import io.github.hiroaki404.gentrans.core.domain.GetLanguagePromptArgsUseCase
 class GenTransCommand(
     private val getExecutor: (providerOption: String?, apikey: String?) -> PromptExecutor = { providerOption, apikey ->
         val getExecutorUseCase = GetExecutorUseCase()
-        SingleLLMPromptExecutor(getExecutorUseCase(providerOption, apikey))
+        PromptExecutor.builder().addClient(getExecutorUseCase(providerOption, apikey)).build()
     }
 ) : SuspendingCliktCommand() {
     init {

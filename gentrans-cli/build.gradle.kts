@@ -14,6 +14,10 @@ repositories {
     mavenCentral()
 }
 
+configurations.all {
+    exclude(group = "io.ktor")
+}
+
 dependencies {
     implementation(projects.gentransCore)
     testImplementation(libs.kotlin.test)
@@ -21,7 +25,7 @@ dependencies {
     testImplementation(libs.kotest.assertions.core)
     testImplementation(libs.koog.agents.test)
     implementation(libs.clikt)
-    implementation(libs.koog.agents)
+    implementation(libs.koog.agents.core)
     implementation(libs.slf4j.simple)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.serialization.core)

@@ -1,8 +1,7 @@
 package io.github.hiroaki404.gentrans.cli
 
-import ai.koog.agents.core.dsl.builder.forwardTo
+import ai.koog.agents.core.dsl.builder.node
 import ai.koog.agents.core.dsl.builder.strategy
-import ai.koog.agents.core.dsl.extension.clearHistory
 import io.github.hiroaki404.gentrans.cli.prompt.decideTargetLanguagePrompt
 import io.github.hiroaki404.gentrans.cli.prompt.detectSourceLanguagePrompt
 import io.github.hiroaki404.gentrans.cli.prompt.refineSummaryPrompt
@@ -26,11 +25,11 @@ fun createTranslationStrategy(
     val detectSourceLanguage by node<String, TranslationState>("Detect Source Language") { input ->
         llm.writeSession {
             val inputTexts = splitTextByLinesWithinSize(input, 10_000)
-            updatePrompt {
+            appendPrompt {
                 detectSourceLanguagePrompt(inputTexts.first())
             }
 
-            val sourceLanguage = requestLLMWithoutTools().content.trim()
+            val sourceLanguage = requestLLMWithoutTools().textContent().trim()
             TranslationState(
                 inputTexts = inputTexts,
                 sourceLanguage = sourceLanguage,
@@ -41,11 +40,11 @@ fun createTranslationStrategy(
 
     val decideTargetLanguage by node<TranslationState, TranslationState>("Decide Target Language") { state ->
         llm.writeSession {
-            updatePrompt {
+            appendPrompt {
                 decideTargetLanguagePrompt(state.sourceLanguage!!, languagePromptArgs)
             }
 
-            val targetLanguage = requestLLMWithoutTools().content.trim()
+            val targetLanguage = requestLLMWithoutTools().textContent().trim()
             state.copy(targetLanguage = targetLanguage)
         }
     }
@@ -60,17 +59,17 @@ fun createTranslationStrategy(
 
             val currentChunk = state.inputTexts.first()
             val summarizedText = if (state.summarizedIntermediateTexts.isEmpty()) {
-                updatePrompt {
+                appendPrompt {
                     summaryPrompt(currentChunk)
                 }
-                requestLLMWithoutTools().content.removeSuffix("\n")
+                requestLLMWithoutTools().textContent().removeSuffix("\n")
             } else {
                 // use refine approach https://note.com/izai/n/n23698de159c5
                 val previousSummary = state.summarizedIntermediateTexts.last()
-                updatePrompt {
+                appendPrompt {
                     refineSummaryPrompt(previousSummary, currentChunk)
                 }
-                val refinedSummary = requestLLMWithoutTools().content.removeSuffix("\n")
+                val refinedSummary = requestLLMWithoutTools().textContent().removeSuffix("\n")
                 refinedSummary
             }
 
@@ -91,10 +90,10 @@ fun createTranslationStrategy(
     val translateByLLM by node<TranslationState, TranslationState>("Translate by LLM") { state ->
         llm.writeSession {
             clearHistory()
-            updatePrompt {
+            appendPrompt {
                 translatePrompt(state.sourceLanguage, state.targetLanguage, state.inputTexts.first())
             }
-            val translatedText = requestLLMWithoutTools().content.removeSuffix("\n")
+            val translatedText = requestLLMWithoutTools().textContent().removeSuffix("\n")
             state.copy(
                 inputTexts = state.inputTexts.drop(1),
                 outputTexts = state.outputTexts + translatedText

@@ -42,9 +42,13 @@ private fun getLLModel(llModelName: String, providerName: String): LLModel {
     return LLModel(
         provider = getProvider(providerName),
         id = llModelName,
-        capabilities = listOf(
-            LLMCapability.Completion,
-        ),
+        capabilities = buildList {
+            add(LLMCapability.Completion)
+            // Koog 1.x: OpenAI client requires an explicit endpoint capability
+            if (providerName == "openai" || providerName == "openrouter") {
+                add(LLMCapability.OpenAIEndpoint.Completions)
+            }
+        },
         // FIXME: Due to the following changes, it is necessary to specify the appropriate contentLength for each model.
         // https://github.com/JetBrains/koog/pull/438
         contextLength = 1_047_57,

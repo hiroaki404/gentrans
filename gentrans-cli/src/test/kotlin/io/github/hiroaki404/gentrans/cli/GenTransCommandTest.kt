@@ -2,9 +2,12 @@ package io.github.hiroaki404.gentrans.cli
 
 import ai.koog.agents.testing.tools.getMockExecutor
 import com.github.ajalt.clikt.command.test
+import io.github.hiroaki404.gentrans.core.api.InternalGentransApi
+import io.github.hiroaki404.gentrans.core.api.createTranslator
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 
+@OptIn(InternalGentransApi::class)
 class GenTransCommandTest : StringSpec({
     val mockLLMApi = getMockExecutor {
         // Mock for language detection prompts
@@ -35,7 +38,7 @@ class GenTransCommandTest : StringSpec({
     }
 
     "test GenTransCommand with argument" {
-        val command = GenTransCommand({ _, _ -> mockLLMApi })
+        val command = GenTransCommand { config -> createTranslator(config, executorFactory = { mockLLMApi }) }
         val result = command.test(argv = "こんにちは世界")
 
         result.stdout shouldBe "Hello World!\n"
@@ -43,7 +46,7 @@ class GenTransCommandTest : StringSpec({
     }
 
     "test GenTransCommand with stdin" {
-        val command = GenTransCommand({ _, _ -> mockLLMApi })
+        val command = GenTransCommand { config -> createTranslator(config, executorFactory = { mockLLMApi }) }
         System.setIn("こんにちは世界\n".byteInputStream())
         val result = command.test(argv = "")
 
@@ -52,7 +55,7 @@ class GenTransCommandTest : StringSpec({
     }
 
     "test GenTransCommand with --to option" {
-        val command = GenTransCommand({ _, _ -> mockLLMApi })
+        val command = GenTransCommand { config -> createTranslator(config, executorFactory = { mockLLMApi }) }
         val result = command.test(argv = arrayOf("--to", "French", "こんにちは世界"))
 
         result.stdout shouldBe "Bonjour le monde!\n"
@@ -83,7 +86,7 @@ class GenTransCommandTest : StringSpec({
             }
         }
 
-        val command = GenTransCommand({ _, _ -> summaryMockLLMApi })
+        val command = GenTransCommand { config -> createTranslator(config, executorFactory = { summaryMockLLMApi }) }
         val result = command.test(argv = arrayOf("--summary", "これは長いテキストの内容です"))
 
         result.stdout shouldBe "Summarized: Hello\n"
@@ -123,7 +126,7 @@ class GenTransCommandTest : StringSpec({
         val chunk2 = "これはビジネスに関する2番目のチャンクです。" + "B".repeat(2000)
         val longText = "$chunk1\n$chunk2"
 
-        val command = GenTransCommand({ _, _ -> refineMockLLMApi })
+        val command = GenTransCommand { config -> createTranslator(config, executorFactory = { refineMockLLMApi }) }
         val result = command.test(argv = arrayOf("--summary", longText))
 
         result.stdout shouldBe "Translated: Combined summary\n"

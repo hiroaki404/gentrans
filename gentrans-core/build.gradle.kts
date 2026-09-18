@@ -16,6 +16,7 @@ dependencies {
     testImplementation(libs.kotlin.test)
     testImplementation(libs.kotest.runner.junit5)
     testImplementation(libs.kotest.assertions.core)
+    testImplementation(libs.koog.agents.test)
     implementation(libs.slf4j.simple)
     implementation(libs.koog.agents.core)
     implementation(libs.koog.client.openai)

@@ -1,8 +1,8 @@
-package io.github.hiroaki404.gentrans.cli.prompt
+package io.github.hiroaki404.gentrans.core.prompt
 
 import ai.koog.prompt.dsl.PromptBuilder
 
-fun PromptBuilder.translatePrompt(
+internal fun PromptBuilder.translatePrompt(
     sourceLanguage: String?,
     targetLanguage: String?,
     text: String

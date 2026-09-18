@@ -1,16 +1,17 @@
-package io.github.hiroaki404.gentrans.cli
+package io.github.hiroaki404.gentrans.core.strategy
 
 import ai.koog.agents.core.dsl.builder.node
 import ai.koog.agents.core.dsl.builder.strategy
-import io.github.hiroaki404.gentrans.cli.prompt.decideTargetLanguagePrompt
-import io.github.hiroaki404.gentrans.cli.prompt.detectSourceLanguagePrompt
-import io.github.hiroaki404.gentrans.cli.prompt.refineSummaryPrompt
-import io.github.hiroaki404.gentrans.cli.prompt.summaryPrompt
-import io.github.hiroaki404.gentrans.cli.prompt.translatePrompt
+import io.github.hiroaki404.gentrans.core.api.TranslationEvent
 import io.github.hiroaki404.gentrans.core.model.LanguagePromptArgs
+import io.github.hiroaki404.gentrans.core.prompt.decideTargetLanguagePrompt
+import io.github.hiroaki404.gentrans.core.prompt.detectSourceLanguagePrompt
+import io.github.hiroaki404.gentrans.core.prompt.refineSummaryPrompt
+import io.github.hiroaki404.gentrans.core.prompt.summaryPrompt
+import io.github.hiroaki404.gentrans.core.prompt.translatePrompt
 import io.github.hiroaki404.gentrans.core.utility.splitTextByLinesWithinSize
 
-data class TranslationState(
+internal data class TranslationState(
     val inputTexts: List<String> = emptyList(),
     val outputTexts: List<String> = emptyList(),
     val summarizedIntermediateTexts: List<String> = emptyList(),
@@ -18,12 +19,17 @@ data class TranslationState(
     val targetLanguage: String? = null
 )
 
-fun createTranslationStrategy(
+/**
+ * [onEvent] notifies the caller of each node's progress. Defaults to a no-op.
+ * [io.github.hiroaki404.gentrans.core.api.Translator] converts this into a `Flow<TranslationEvent>`.
+ */
+internal fun createTranslationStrategy(
     languagePromptArgs: LanguagePromptArgs,
-    shouldSummary: Boolean
+    shouldSummary: Boolean,
+    onEvent: suspend (TranslationEvent) -> Unit = {}
 ) = strategy<String, String>("GenTrans Strategy") {
     val detectSourceLanguage by node<String, TranslationState>("Detect Source Language") { input ->
-        llm.writeSession {
+        val state = llm.writeSession {
             val inputTexts = splitTextByLinesWithinSize(input, 10_000)
             appendPrompt {
                 detectSourceLanguagePrompt(inputTexts.first())
@@ -36,10 +42,17 @@ fun createTranslationStrategy(
                 targetLanguage = languagePromptArgs.targetLanguage
             )
         }
+        onEvent(
+            TranslationEvent.SourceLanguageDetected(
+                language = state.sourceLanguage!!,
+                totalChunks = state.inputTexts.size
+            )
+        )
+        state
     }
 
     val decideTargetLanguage by node<TranslationState, TranslationState>("Decide Target Language") { state ->
-        llm.writeSession {
+        val nextState = llm.writeSession {
             appendPrompt {
                 decideTargetLanguagePrompt(state.sourceLanguage!!, languagePromptArgs)
             }
@@ -47,6 +60,8 @@ fun createTranslationStrategy(
             val targetLanguage = requestLLMWithoutTools().textContent().trim()
             state.copy(targetLanguage = targetLanguage)
         }
+        onEvent(TranslationEvent.TargetLanguageDecided(nextState.targetLanguage!!))
+        nextState
     }
 
     val summaryByLLM by node<TranslationState, TranslationState>("Summary by LLM") { state ->
@@ -54,7 +69,7 @@ fun createTranslationStrategy(
             return@node state
         }
 
-        llm.writeSession {
+        val nextState = llm.writeSession {
             clearHistory()
 
             val currentChunk = state.inputTexts.first()
@@ -78,6 +93,8 @@ fun createTranslationStrategy(
                 summarizedIntermediateTexts = listOf(summarizedText)
             )
         }
+        onEvent(TranslationEvent.Summarized(remainingChunks = nextState.inputTexts.size))
+        nextState
     }
 
     val finalizeSummary by node<TranslationState, TranslationState>("Finalize Summary") { state ->
@@ -88,7 +105,11 @@ fun createTranslationStrategy(
     }
 
     val translateByLLM by node<TranslationState, TranslationState>("Translate by LLM") { state ->
-        llm.writeSession {
+        // This node loops on itself until the remaining chunks run out, so the total chunk
+        // count used for notification is rebuilt each time from "translated so far + this one +
+        // remaining" (after summarizing, the total becomes 1).
+        val totalChunks = state.outputTexts.size + state.inputTexts.size
+        val nextState = llm.writeSession {
             clearHistory()
             appendPrompt {
                 translatePrompt(state.sourceLanguage, state.targetLanguage, state.inputTexts.first())
@@ -99,6 +120,15 @@ fun createTranslationStrategy(
                 outputTexts = state.outputTexts + translatedText
             )
         }
+        onEvent(
+            TranslationEvent.ChunkTranslated(
+                chunk = nextState.outputTexts.last(),
+                translatedTextSoFar = nextState.outputTexts.joinToString("\n"),
+                translatedChunks = nextState.outputTexts.size,
+                totalChunks = totalChunks
+            )
+        )
+        nextState
     }
 
     val finalizeTranslation by node<TranslationState, String>("Finalize Translation") { state ->

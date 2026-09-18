@@ -37,11 +37,11 @@ public class GetExecutorUseCase(
             ?: localConfigs.apiKey
             ?: envConfigs.apiKey
 
-        return getExecutor(finalProviderKey, finalApiKey)
+        return buildLLMClient(finalProviderKey, finalApiKey)
     }
 }
 
-private fun getExecutor(providerName: String, apiKey: String?): LLMClient {
+internal fun buildLLMClient(providerName: String, apiKey: String?): LLMClient {
     return when (providerName) {
         "google" -> {
             val finalApiKey = apiKey

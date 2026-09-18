@@ -1,9 +1,9 @@
-package io.github.hiroaki404.gentrans.cli.prompt
+package io.github.hiroaki404.gentrans.core.prompt
 
 import ai.koog.prompt.dsl.PromptBuilder
 import io.github.hiroaki404.gentrans.core.model.LanguagePromptArgs
 
-fun PromptBuilder.detectSourceLanguagePrompt(
+internal fun PromptBuilder.detectSourceLanguagePrompt(
     text: String
 ) {
     system(
@@ -27,7 +27,7 @@ $text
     )
 }
 
-fun PromptBuilder.decideTargetLanguagePrompt(
+internal fun PromptBuilder.decideTargetLanguagePrompt(
     sourceLanguage: String,
     languagePromptArgs: LanguagePromptArgs
 ) {

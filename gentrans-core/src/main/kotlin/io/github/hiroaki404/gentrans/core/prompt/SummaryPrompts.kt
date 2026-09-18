@@ -1,8 +1,8 @@
-package io.github.hiroaki404.gentrans.cli.prompt
+package io.github.hiroaki404.gentrans.core.prompt
 
 import ai.koog.prompt.dsl.PromptBuilder
 
-fun PromptBuilder.summaryPrompt(
+internal fun PromptBuilder.summaryPrompt(
     text: String,
 ) {
     system(
@@ -22,7 +22,7 @@ $text
     )
 }
 
-fun PromptBuilder.refineSummaryPrompt(
+internal fun PromptBuilder.refineSummaryPrompt(
     previousSummary: String,
     newChunk: String
 ) {

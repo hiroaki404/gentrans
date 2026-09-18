@@ -3,6 +3,8 @@ package io.github.hiroaki404.gentrans.cli
 import ai.koog.prompt.executor.model.PromptExecutor
 import ai.koog.prompt.executor.ollama.client.OllamaClient
 import com.github.ajalt.clikt.command.test
+import io.github.hiroaki404.gentrans.core.api.InternalGentransApi
+import io.github.hiroaki404.gentrans.core.api.createTranslator
 import io.kotest.core.annotation.Tags
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.extensions.system.OverrideMode
@@ -15,11 +17,14 @@ import io.kotest.matchers.string.shouldNotContain
 
 // This test is designed to be run after starting ollama on your local PC.
 @Tags("integration")
+@OptIn(InternalGentransApi::class)
 class GenTransCommandIntegrationTest : StringSpec({
     val ollamaOptions = listOf("--provider", "ollama", "--model", "gemma3n:latest")
 
-    fun createCommand() = GenTransCommand { _, _ ->
-        PromptExecutor.builder().addClient(OllamaClient()).build()
+    fun createCommand() = GenTransCommand { config ->
+        createTranslator(config, executorFactory = {
+            PromptExecutor.builder().addClient(OllamaClient()).build()
+        })
     }
 
     "test GenTransCommand with real LLM" {

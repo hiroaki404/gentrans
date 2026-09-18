@@ -34,11 +34,11 @@ public class GetLLModelUseCase(
             ?: envConfigs.providerKey
             ?: defaultConfigs.providerKey
 
-        return getLLModel(finalLlmModelKey, finalProviderKey)
+        return buildLLModel(finalLlmModelKey, finalProviderKey)
     }
 }
 
-private fun getLLModel(llModelName: String, providerName: String): LLModel {
+internal fun buildLLModel(llModelName: String, providerName: String): LLModel {
     return LLModel(
         provider = getProvider(providerName),
         id = llModelName,

@@ -9,17 +9,12 @@ import com.github.ajalt.clikt.parameters.arguments.multiple
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.versionOption
+import io.github.hiroaki404.gentrans.cli.config.ResolveTranslatorConfigUseCase
 import io.github.hiroaki404.gentrans.core.api.InternalGentransApi
-import io.github.hiroaki404.gentrans.core.api.Provider
 import io.github.hiroaki404.gentrans.core.api.TranslationRequest
 import io.github.hiroaki404.gentrans.core.api.Translator
 import io.github.hiroaki404.gentrans.core.api.TranslatorConfig
 import io.github.hiroaki404.gentrans.core.api.createTranslator
-import io.github.hiroaki404.gentrans.core.data.EnvConfigDataSource
-import io.github.hiroaki404.gentrans.core.data.LocalConfigDataSource
-import io.github.hiroaki404.gentrans.core.model.DefaultConfigs
-import io.github.hiroaki404.gentrans.core.model.EnvConfigs
-import io.github.hiroaki404.gentrans.core.model.LocalConfigs
 
 class GenTransCommand(
     private val translatorFactory: (TranslatorConfig) -> Translator = { config ->
@@ -55,8 +50,7 @@ class GenTransCommand(
 
     private val targetText: List<String> by argument(help = "Text to translate. Reads from stdin if not provided.").multiple()
 
-    private val envConfigDataSource = EnvConfigDataSource()
-    private val localConfigDataSource = LocalConfigDataSource()
+    private val resolveTranslatorConfigUseCase = ResolveTranslatorConfigUseCase()
 
     override suspend fun run() {
         val text = if (targetText.isNotEmpty()) {
@@ -65,7 +59,11 @@ class GenTransCommand(
             generateSequence(::readlnOrNull).joinToString("\n")
         }
 
-        val config = resolveTranslatorConfig()
+        val config = resolveTranslatorConfigUseCase(
+            providerOption = provider,
+            modelOption = model,
+            apiKeyOption = apikey,
+        )
 
         val translator = if (BuildConfig.IS_DEBUG && enableTrace) {
             @OptIn(InternalGentransApi::class)
@@ -87,42 +85,6 @@ class GenTransCommand(
             )
         )
         echo(result)
-    }
-
-    private fun resolveTranslatorConfig(): TranslatorConfig {
-        val localConfigs = localConfigDataSource.getConfigs() as LocalConfigs
-        val envConfigs = envConfigDataSource.getConfigs() as EnvConfigs
-        val defaultConfigs = DefaultConfigs()
-
-        val finalProviderKey = provider
-            ?: localConfigs.providerKey
-            ?: envConfigs.providerKey
-            ?: defaultConfigs.providerKey
-
-        val finalApiKey = apikey
-            ?: localConfigs.apiKey
-            ?: envConfigs.apiKey
-
-        val finalModel = model
-            ?: localConfigs.llmModelKey
-            ?: envConfigs.llmModelKey
-            ?: defaultConfigs.llmModelKey
-
-        val finalNativeLanguage = localConfigs.nativeLanguage
-            ?: envConfigs.nativeLanguage
-            ?: defaultConfigs.nativeLanguage
-
-        val finalSecondLanguage = localConfigs.secondLanguage
-            ?: envConfigs.secondLanguage
-            ?: defaultConfigs.secondLanguage
-
-        return TranslatorConfig(
-            provider = Provider.fromKey(finalProviderKey),
-            model = finalModel,
-            apiKey = finalApiKey,
-            nativeLanguage = finalNativeLanguage,
-            secondLanguage = finalSecondLanguage,
-        )
     }
 }
 

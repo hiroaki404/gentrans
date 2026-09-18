@@ -3,8 +3,8 @@ package io.github.hiroaki404.gentrans.core.api
 import ai.koog.agents.core.agent.AIAgent
 import ai.koog.agents.core.agent.GraphAIAgent
 import ai.koog.prompt.executor.model.PromptExecutor
-import io.github.hiroaki404.gentrans.core.domain.buildLLMClient
-import io.github.hiroaki404.gentrans.core.domain.buildLLModel
+import io.github.hiroaki404.gentrans.core.llm.buildLLMClient
+import io.github.hiroaki404.gentrans.core.llm.buildLLModel
 import io.github.hiroaki404.gentrans.core.model.LanguagePromptArgs
 import io.github.hiroaki404.gentrans.core.strategy.createTranslationStrategy
 import kotlinx.coroutines.channels.Channel

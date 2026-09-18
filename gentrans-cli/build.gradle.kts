@@ -4,7 +4,6 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.shadow)
     alias(libs.plugins.buildconfig)
-    alias(libs.plugins.ktlint)
 }
 
 group = "io.github.hiroaki404"
@@ -26,7 +25,7 @@ dependencies {
     testImplementation(libs.koog.agents.test)
     implementation(libs.clikt)
     implementation(libs.koog.agents.core)
-    implementation(libs.slf4j.simple)
+    runtimeOnly(libs.slf4j.simple)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.serialization.core)
     implementation(libs.koog.agents.features.opentelemetry)

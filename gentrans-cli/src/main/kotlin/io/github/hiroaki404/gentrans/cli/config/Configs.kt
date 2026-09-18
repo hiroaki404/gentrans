@@ -1,13 +1,13 @@
-package io.github.hiroaki404.gentrans.core.model
+package io.github.hiroaki404.gentrans.cli.config
 
-public sealed interface Configs {
-    public val llmModelKey: String?
-    public val providerKey: String?
-    public val nativeLanguage: String?
-    public val secondLanguage: String?
+sealed interface Configs {
+    val llmModelKey: String?
+    val providerKey: String?
+    val nativeLanguage: String?
+    val secondLanguage: String?
 }
 
-public data class EnvConfigs(
+data class EnvConfigs(
     override val llmModelKey: String? = null,
     override val providerKey: String? = null,
     override val nativeLanguage: String? = null,
@@ -15,7 +15,7 @@ public data class EnvConfigs(
     val apiKey: String? = null,
 ) : Configs
 
-public data class LocalConfigs(
+data class LocalConfigs(
     override val llmModelKey: String? = null,
     override val providerKey: String? = null,
     override val nativeLanguage: String? = null,
@@ -23,7 +23,7 @@ public data class LocalConfigs(
     val apiKey: String? = null,
 ) : Configs
 
-public data class OptionConfigs(
+data class OptionConfigs(
     override val llmModelKey: String? = null,
     override val providerKey: String? = null,
     override val nativeLanguage: String? = null,
@@ -31,7 +31,7 @@ public data class OptionConfigs(
     val apiKey: String? = null,
 ) : Configs
 
-public data class DefaultConfigs(
+data class DefaultConfigs(
     override val llmModelKey: String = "gpt-4o",
     override val providerKey: String = "openai",
     override val nativeLanguage: String = "English",

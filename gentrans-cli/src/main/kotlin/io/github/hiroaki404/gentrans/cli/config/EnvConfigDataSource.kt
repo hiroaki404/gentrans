@@ -1,9 +1,6 @@
-package io.github.hiroaki404.gentrans.core.data
+package io.github.hiroaki404.gentrans.cli.config
 
-import io.github.hiroaki404.gentrans.core.model.Configs
-import io.github.hiroaki404.gentrans.core.model.EnvConfigs
-
-public class EnvConfigDataSource : ConfigDataSource {
+class EnvConfigDataSource : ConfigDataSource {
     override fun getConfigs(): Configs {
         return EnvConfigs(
             llmModelKey = System.getenv("GENTRANS_MODEL"),

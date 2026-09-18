@@ -28,6 +28,19 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+    systemProperty("kotest.tags.exclude", "smoke")
+}
+
+// LOCAL/MANUAL only: real-HTTP smoke tests that verify the ktor-free build can still reach
+// the LLM providers. Needs network; not run as part of `test` or CI.
+val smokeTest by tasks.registering(Test::class) {
+    group = "verification"
+    description = "Runs real-HTTP smoke tests (network required, not part of the normal test task)."
+    testClassesDirs = sourceSets.test.get().output.classesDirs
+    classpath = sourceSets.test.get().runtimeClasspath
+    useJUnitPlatform()
+    systemProperty("kotest.tags.include", "smoke")
+    outputs.upToDateWhen { false }
 }
 
 kotlin {

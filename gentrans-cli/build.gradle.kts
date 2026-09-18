@@ -33,9 +33,9 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
-    val isCI = System.getenv("CI") == "true"
-    val excludeTags = if (isCI) "integration" else ""
-    systemProperty("kotest.tags.exclude", excludeTags)
+    val isCI = providers.environmentVariable("CI").orElse("false").map { it == "true" }
+    val excludeTags = isCI.map { ci -> if (ci) "smoke,integration" else "smoke" }
+    systemProperty("kotest.tags.exclude", excludeTags.get())
 }
 
 // デバッグビルドかどうかの判定

@@ -102,6 +102,10 @@ Note: If you are debugging, you will need ollama for testing.
 If you want to use tracing for debug, you need to set up langfuse, and use `--trace` debug only option.
 If you have a trouble, please `./gradlew clean` or make an issue.
 
+To verify the ktor-free HTTP path (`ai.koog:http-client-java`) can actually reach the LLM
+providers, run `./gradlew :gentrans-core:smokeTest`. It needs network access but no API key
+(it expects auth failures), and is excluded from the normal `test` task and CI.
+
 ---
 
 ## Usage

@@ -13,11 +13,11 @@ import io.github.hiroaki404.gentrans.core.model.EnvConfigs
 import io.github.hiroaki404.gentrans.core.model.LocalConfigs
 import io.github.hiroaki404.gentrans.core.model.OptionConfigs
 
-class GetExecutorUseCase(
+public class GetExecutorUseCase(
     private val envConfigDataSource: ConfigDataSource = EnvConfigDataSource(),
     private val localConfigDataSource: ConfigDataSource = LocalConfigDataSource()
 ) {
-    operator fun invoke(providerOption: String?, apiKey: String?): LLMClient {
+    public operator fun invoke(providerOption: String?, apiKey: String?): LLMClient {
         val optionConfigs = OptionConfigs(
             providerKey = providerOption,
             apiKey = apiKey

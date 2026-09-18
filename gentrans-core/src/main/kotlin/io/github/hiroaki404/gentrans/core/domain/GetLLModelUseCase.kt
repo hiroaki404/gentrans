@@ -9,11 +9,11 @@ import io.github.hiroaki404.gentrans.core.data.LocalConfigDataSource
 import io.github.hiroaki404.gentrans.core.model.DefaultConfigs
 import io.github.hiroaki404.gentrans.core.model.OptionConfigs
 
-class GetLLModelUseCase(
+public class GetLLModelUseCase(
     private val envConfigDataSource: ConfigDataSource = EnvConfigDataSource(),
     private val localConfigDataSource: ConfigDataSource = LocalConfigDataSource()
 ) {
-    operator fun invoke(llModelOption: String?, providerOption: String?): LLModel {
+    public operator fun invoke(llModelOption: String?, providerOption: String?): LLModel {
         val optionConfigs = OptionConfigs(
             llmModelKey = llModelOption,
             providerKey = providerOption

@@ -28,3 +28,15 @@ dependencies {
 tasks.test {
     useJUnitPlatform()
 }
+
+kotlin {
+    explicitApi()
+    compilerOptions {
+        languageVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_2_3)
+        apiVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_2_3)
+    }
+}
+
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().matching { it.name.contains("Test") }.configureEach {
+    compilerOptions.freeCompilerArgs.add("-Xexplicit-api=disable")
+}

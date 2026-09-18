@@ -1,6 +1,6 @@
 package io.github.hiroaki404.gentrans.core.utility
 
-fun splitTextByLinesWithinSize(text: String, maxSize: Int): List<String> {
+public fun splitTextByLinesWithinSize(text: String, maxSize: Int): List<String> {
     if (text.isEmpty()) return emptyList()
     if (text.length <= maxSize) return listOf(text)
 

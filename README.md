@@ -38,6 +38,7 @@ translation directly in your terminal.
 - **Direct Translation** - Translate text directly from command-line arguments.
 - **Pipe Support** - Read text from standard input (stdin) to work seamlessly with pipes (`|`).
 - **Text Summarization** - Summarize long texts before translation using the `-s` or `--summary` option.
+- **Markdown Support** - Translate Markdown documents with `-m markdown` / `--format markdown`, keeping fenced code blocks and front matter intact.
 - **Multiple AI Providers** - Support for multiple AI providers (e.g., OpenAI, Gemini).
 - **Model Selection** - Select specific models for translation.
 - **Environment Variable Support** - Configure API keys and settings via environment variables.
@@ -149,6 +150,15 @@ or clipboard
 $ pbpaste | gentrans # macOS
 ```
 
+### 📝 Translating Markdown
+
+Use `-m markdown` (or `--format markdown`) to translate Markdown documents. Fenced code blocks and YAML front matter
+are kept verbatim, and the LLM is instructed to preserve Markdown syntax:
+
+```bash
+$ cat README.md | gentrans --format markdown --to Japanese > README.ja.md
+```
+
 ### 🤖 Specifying AI Provider and Model
 
 You can specify the AI provider and model to use for translation.
@@ -196,6 +206,8 @@ only use one provider and model configuration at a time.
   e.g., [GoogleModels.kt](https://github.com/JetBrains/koog/blob/develop/prompt/prompt-executor/prompt-executor-clients/prompt-executor-google-client/src/commonMain/kotlin/ai/koog/prompt/executor/clients/google/GoogleModels.kt)).
   Representative models include `gemini-2.0-flash`, `gpt-4o`, `o3`, `gpt-4o-mini`, `claude-3-opus`, `claude-sonnet-4-0`,
   `gemma3n:latest`, and `llama3.2:latest`.
+- `-m, --format`: Input text format. `plain` (default) or `markdown`. With `markdown`, fenced code blocks and front
+  matter are kept verbatim and Markdown syntax is preserved.
 
 ### Environment variables:
 
@@ -283,6 +295,7 @@ OPTIONS:
         --model <MODEL>    AI model to use. e.g. `gemini-2.0-flash`, `gpt-4o`, `claude-3-opus`, `gemma3n:latest`, `llama3.2:latest`. Supported models depend on the Koog library. See documentation for details.
     -t, --to <LANGUAGE>    Specify the target language. Since the language is interpreted by an LLM, you can use various formats like `English`, `en`, or even `日本語`.
     -s, --summary          Enable text summarization before translation. Useful for long texts.
+    -m, --format <FORMAT>  Input text format. `plain` (default) or `markdown`. With `markdown`, fenced code blocks and front matter are kept verbatim and Markdown syntax is preserved.
     -h, --help             Print help information
         --version          Print version information
 ```
@@ -299,11 +312,20 @@ Please be aware of the following limitations when translating long texts:
   which may not accurately represent the language of the entire text
 - **Contextual Continuity**: Since translation is performed in chunks, long texts may occasionally experience
   inconsistent connections between translated segments
-- **Line-Based Splitting**: Currently, long text chunking is performed by line breaks, so translation of long passages
-  without line breaks may not be handled properly
+- **Line-Based Splitting**: Currently, long text chunking is performed by line breaks (applies to `plain` format), so
+  translation of long passages without line breaks may not be handled properly
 
 Due to these limitations, when translating long texts, it is recommended to either structure the text with appropriate
 line breaks or divide the text into manageable segments before translation.
+
+### Markdown Input
+
+- Only fenced code blocks and YAML front matter are protected from translation; inline code spans, URLs, and image
+  paths are not shielded and instead rely on the translation prompt's instructions to be left untranslated.
+- A single Markdown block (e.g. a very long table or list) that alone exceeds the chunk size limit is translated as
+  one chunk without being split further, since splitting it could break its structure.
+- Combining `--format markdown` with `-s`/`--summary` is not supported: summarization may alter or drop the
+  placeholder tokens used to protect blocks, causing translation to fail.
 
 ---
 

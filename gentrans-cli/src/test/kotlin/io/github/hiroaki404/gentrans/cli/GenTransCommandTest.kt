@@ -6,6 +6,7 @@ import io.github.hiroaki404.gentrans.core.api.InternalGentransApi
 import io.github.hiroaki404.gentrans.core.api.createTranslator
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
 
 @OptIn(InternalGentransApi::class)
 class GenTransCommandTest : StringSpec({
@@ -91,6 +92,61 @@ class GenTransCommandTest : StringSpec({
 
         result.stdout shouldBe "Summarized: Hello\n"
         result.statusCode shouldBe 0
+    }
+
+    "test GenTransCommand with --format markdown option" {
+        val markdownMockLLMApi = getMockExecutor {
+            mockLLMAnswer("Japanese") onCondition { it.contains("Identify the natural language of the following text") }
+
+            mockLLMAnswer("English") onCondition {
+                it.contains("Determine the target language for translation") &&
+                    it.contains("Input Text Language: Japanese")
+            }
+
+            mockLLMAnswer("# Hello\n\nThis is a test.\n\nGENTRANS_BLOCK_0") onCondition {
+                it.contains("Translate the following text from Japanese to English")
+            }
+        }
+
+        val markdownInput = "# こんにちは\n\nこれはテストです。\n\n```kotlin\nval x = 1\n```"
+
+        val command = GenTransCommand { config -> createTranslator(config, executorFactory = { markdownMockLLMApi }) }
+        val result = command.test(argv = arrayOf("--format", "markdown", markdownInput))
+
+        result.stdout shouldBe "# Hello\n\nThis is a test.\n\n```kotlin\nval x = 1\n```\n"
+        result.statusCode shouldBe 0
+    }
+
+    "test GenTransCommand with -m short option" {
+        val markdownMockLLMApi = getMockExecutor {
+            mockLLMAnswer("Japanese") onCondition { it.contains("Identify the natural language of the following text") }
+
+            mockLLMAnswer("English") onCondition {
+                it.contains("Determine the target language for translation") &&
+                    it.contains("Input Text Language: Japanese")
+            }
+
+            mockLLMAnswer("# Hello\n\nThis is a test.\n\nGENTRANS_BLOCK_0") onCondition {
+                it.contains("Translate the following text from Japanese to English")
+            }
+        }
+
+        val markdownInput = "# こんにちは\n\nこれはテストです。\n\n```kotlin\nval x = 1\n```"
+
+        val command = GenTransCommand { config -> createTranslator(config, executorFactory = { markdownMockLLMApi }) }
+        val result = command.test(argv = arrayOf("-m", "markdown", markdownInput))
+
+        result.stdout shouldBe "# Hello\n\nThis is a test.\n\n```kotlin\nval x = 1\n```\n"
+        result.statusCode shouldBe 0
+    }
+
+    "test GenTransCommand with invalid --format value" {
+        val command = GenTransCommand { config -> createTranslator(config, executorFactory = { mockLLMApi }) }
+        val result = command.test(argv = arrayOf("--format", "foo", "こんにちは世界"))
+
+        result.statusCode shouldBe 1
+        result.output shouldContain "plain"
+        result.output shouldContain "markdown"
     }
 
     "test GenTransCommand with refine summary for multiple chunks" {

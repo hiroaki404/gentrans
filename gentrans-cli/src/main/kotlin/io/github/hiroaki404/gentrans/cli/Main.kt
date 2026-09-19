@@ -6,10 +6,13 @@ import com.github.ajalt.clikt.command.SuspendingCliktCommand
 import com.github.ajalt.clikt.command.main
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.arguments.multiple
+import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.versionOption
+import com.github.ajalt.clikt.parameters.types.choice
 import io.github.hiroaki404.gentrans.cli.config.ResolveTranslatorConfigUseCase
+import io.github.hiroaki404.gentrans.core.api.InputFormat
 import io.github.hiroaki404.gentrans.core.api.InternalGentransApi
 import io.github.hiroaki404.gentrans.core.api.TranslationRequest
 import io.github.hiroaki404.gentrans.core.api.Translator
@@ -48,6 +51,12 @@ class GenTransCommand(
         help = "Enable text summarization before translation. Useful for long texts."
     ).flag()
 
+    private val inputFormat: InputFormat by option(
+        names = arrayOf("-m", "--format"),
+        help = "Input text format. `plain` (default) or `markdown`. With `markdown`, fenced code blocks and front matter are kept verbatim and Markdown syntax is preserved."
+    ).choice("plain" to InputFormat.PLAIN_TEXT, "markdown" to InputFormat.MARKDOWN)
+        .default(InputFormat.PLAIN_TEXT)
+
     private val targetText: List<String> by argument(help = "Text to translate. Reads from stdin if not provided.").multiple()
 
     private val resolveTranslatorConfigUseCase = ResolveTranslatorConfigUseCase()
@@ -82,6 +91,7 @@ class GenTransCommand(
                 text = text,
                 targetLanguage = targetLanguage,
                 shouldSummary = shouldSummary,
+                inputFormat = inputFormat,
             )
         )
         echo(result)

@@ -1,0 +1,9 @@
+GENTRANS_BLOCK_0
+
+# Guide
+<<<CHUNK>>>
+Here is a snippet:
+<<<CHUNK>>>
+GENTRANS_BLOCK_1
+<<<CHUNK>>>
+That's the end.

@@ -150,5 +150,90 @@ class MarkdownProtectorTest : FunSpec({
             val translated = "Just plain translated text.\n"
             MarkdownProtector.restore(translated, emptyList()) shouldBe translated
         }
+
+        test("should treat a placeholder-shaped token as unknown rather than crash when it has no matching block") {
+            val exception = shouldThrow<PlaceholderMismatchException> {
+                MarkdownProtector.restore("GENTRANS_BLOCK_0\n", emptyList())
+            }
+            exception.unknown shouldBe listOf(0)
+        }
+
+        test("should treat an out-of-range expected index as unknown rather than crash") {
+            val protected = MarkdownProtector.protect("```\nfirst\n```\n")
+            val exception = shouldThrow<PlaceholderMismatchException> {
+                MarkdownProtector.restore("GENTRANS_BLOCK_5\n", protected.blocks, expected = setOf(5))
+            }
+            exception.unknown shouldBe listOf(5)
+        }
+
+        test("should only require the expected subset of placeholders when expected is given") {
+            val protected = MarkdownProtector.protect("```\nfirst\n```\n\nmiddle\n\n```\nsecond\n```\n")
+            val result = MarkdownProtector.restore("GENTRANS_BLOCK_1\n", protected.blocks, expected = setOf(1))
+            result shouldBe "```\nsecond\n```\n"
+        }
+
+        test("should treat a placeholder outside the expected set as unknown") {
+            val protected = MarkdownProtector.protect("```\nfirst\n```\n\nmiddle\n\n```\nsecond\n```\n")
+            val exception = shouldThrow<PlaceholderMismatchException> {
+                MarkdownProtector.restore(
+                    "GENTRANS_BLOCK_0 and GENTRANS_BLOCK_1\n",
+                    protected.blocks,
+                    expected = setOf(0),
+                )
+            }
+            exception.unknown shouldBe listOf(1)
+        }
+
+        test("should still detect a missing placeholder within the expected set") {
+            val protected = MarkdownProtector.protect("```\nfirst\n```\n\nmiddle\n\n```\nsecond\n```\n")
+            val exception = shouldThrow<PlaceholderMismatchException> {
+                MarkdownProtector.restore("no placeholder here\n", protected.blocks, expected = setOf(0, 1))
+            }
+            exception.missing shouldBe listOf(0, 1)
+        }
+
+        test("should still detect a duplicated placeholder within the expected set") {
+            val protected = MarkdownProtector.protect("```\nfirst\n```\n")
+            val exception = shouldThrow<PlaceholderMismatchException> {
+                MarkdownProtector.restore(
+                    "GENTRANS_BLOCK_0 and GENTRANS_BLOCK_0 again\n",
+                    protected.blocks,
+                    expected = setOf(0),
+                )
+            }
+            exception.duplicated shouldBe listOf(0)
+        }
+    }
+
+    context("referencedBlockIndices") {
+        test("should return the set of placeholder indices referenced in a chunk") {
+            MarkdownProtector.referencedBlockIndices("GENTRANS_BLOCK_2 and GENTRANS_BLOCK_0") shouldBe setOf(2, 0)
+        }
+
+        test("should return an empty set when no placeholder is referenced") {
+            MarkdownProtector.referencedBlockIndices("plain text") shouldBe emptySet()
+        }
+    }
+
+    context("isPlaceholderOnly") {
+        test("should be true for a chunk that contains only a placeholder") {
+            MarkdownProtector.isPlaceholderOnly("GENTRANS_BLOCK_0") shouldBe true
+        }
+
+        test("should be true for a chunk that contains a placeholder surrounded by whitespace") {
+            MarkdownProtector.isPlaceholderOnly("  GENTRANS_BLOCK_0\n") shouldBe true
+        }
+
+        test("should be false for a chunk that mixes a placeholder with other text") {
+            MarkdownProtector.isPlaceholderOnly("See GENTRANS_BLOCK_0 below.") shouldBe false
+        }
+
+        test("should be false for a chunk with no placeholder") {
+            MarkdownProtector.isPlaceholderOnly("plain text") shouldBe false
+        }
+
+        test("should be false for blank text") {
+            MarkdownProtector.isPlaceholderOnly("   \n") shouldBe false
+        }
     }
 })

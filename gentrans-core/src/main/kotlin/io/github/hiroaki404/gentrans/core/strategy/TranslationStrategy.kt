@@ -2,7 +2,10 @@ package io.github.hiroaki404.gentrans.core.strategy
 
 import ai.koog.agents.core.dsl.builder.node
 import ai.koog.agents.core.dsl.builder.strategy
+import io.github.hiroaki404.gentrans.core.api.InputFormat
 import io.github.hiroaki404.gentrans.core.api.TranslationEvent
+import io.github.hiroaki404.gentrans.core.markdown.MarkdownProtector
+import io.github.hiroaki404.gentrans.core.markdown.MarkdownSegmenter
 import io.github.hiroaki404.gentrans.core.model.LanguagePromptArgs
 import io.github.hiroaki404.gentrans.core.prompt.decideTargetLanguagePrompt
 import io.github.hiroaki404.gentrans.core.prompt.detectSourceLanguagePrompt
@@ -16,8 +19,14 @@ internal data class TranslationState(
     val outputTexts: List<String> = emptyList(),
     val summarizedIntermediateTexts: List<String> = emptyList(),
     val sourceLanguage: String? = null,
-    val targetLanguage: String? = null
+    val targetLanguage: String? = null,
+    /** Original blocks protected out of Markdown input by [MarkdownProtector.protect]. Unused for [InputFormat.PLAIN_TEXT]. */
+    val markdownBlocks: List<String> = emptyList(),
 )
+
+/** The separator [ChunkTranslated.translatedTextSoFar][TranslationEvent.ChunkTranslated] and the final result are joined with. */
+private fun chunkSeparator(inputFormat: InputFormat): String =
+    if (inputFormat == InputFormat.MARKDOWN) "\n\n" else "\n"
 
 /**
  * [onEvent] notifies the caller of each node's progress. Defaults to a no-op.
@@ -26,18 +35,29 @@ internal data class TranslationState(
 internal fun createTranslationStrategy(
     languagePromptArgs: LanguagePromptArgs,
     shouldSummary: Boolean,
+    inputFormat: InputFormat = InputFormat.PLAIN_TEXT,
     onEvent: suspend (TranslationEvent) -> Unit = {}
 ) = strategy<String, String>("GenTrans Strategy") {
     val detectSourceLanguage by node<String, TranslationState>("Detect Source Language") { input ->
         val state = llm.writeSession {
-            val inputTexts = splitTextByLinesWithinSize(input, 10_000)
+            val (inputTexts, markdownBlocks) = if (inputFormat == InputFormat.MARKDOWN) {
+                val protected = MarkdownProtector.protect(input)
+                MarkdownSegmenter.split(protected.text, 10_000) to protected.blocks
+            } else {
+                splitTextByLinesWithinSize(input, 10_000) to emptyList()
+            }
             appendPrompt {
-                detectSourceLanguagePrompt(inputTexts.first())
+                // Skip placeholder-only chunks (e.g. a lone front matter block) so language
+                // detection sees actual natural-language content.
+                val detectionSample = inputTexts.firstOrNull { !MarkdownProtector.isPlaceholderOnly(it) }
+                    ?: inputTexts.first()
+                detectSourceLanguagePrompt(detectionSample)
             }
 
             val sourceLanguage = requestLLMWithoutTools().textContent().trim()
             TranslationState(
                 inputTexts = inputTexts,
+                markdownBlocks = markdownBlocks,
                 sourceLanguage = sourceLanguage,
                 targetLanguage = languagePromptArgs.targetLanguage
             )
@@ -109,21 +129,40 @@ internal fun createTranslationStrategy(
         // count used for notification is rebuilt each time from "translated so far + this one +
         // remaining" (after summarizing, the total becomes 1).
         val totalChunks = state.outputTexts.size + state.inputTexts.size
-        val nextState = llm.writeSession {
-            clearHistory()
-            appendPrompt {
-                translatePrompt(state.sourceLanguage, state.targetLanguage, state.inputTexts.first())
-            }
-            val translatedText = requestLLMWithoutTools().textContent().removeSuffix("\n")
-            state.copy(
-                inputTexts = state.inputTexts.drop(1),
-                outputTexts = state.outputTexts + translatedText
+        val currentChunk = state.inputTexts.first()
+
+        val nextState = if (inputFormat == InputFormat.MARKDOWN && MarkdownProtector.isPlaceholderOnly(currentChunk)) {
+            // Nothing to translate (e.g. a lone front matter or fenced-code placeholder): skip
+            // the LLM call and just restore this chunk's block back into it.
+            val restoredText = MarkdownProtector.restore(
+                currentChunk,
+                state.markdownBlocks,
+                MarkdownProtector.referencedBlockIndices(currentChunk)
             )
+            state.copy(inputTexts = state.inputTexts.drop(1), outputTexts = state.outputTexts + restoredText)
+        } else {
+            llm.writeSession {
+                clearHistory()
+                appendPrompt {
+                    translatePrompt(state.sourceLanguage, state.targetLanguage, currentChunk, inputFormat)
+                }
+                val translatedText = requestLLMWithoutTools().textContent().removeSuffix("\n")
+                val restoredText = if (inputFormat == InputFormat.MARKDOWN) {
+                    MarkdownProtector.restore(
+                        translatedText,
+                        state.markdownBlocks,
+                        MarkdownProtector.referencedBlockIndices(currentChunk)
+                    )
+                } else {
+                    translatedText
+                }
+                state.copy(inputTexts = state.inputTexts.drop(1), outputTexts = state.outputTexts + restoredText)
+            }
         }
         onEvent(
             TranslationEvent.ChunkTranslated(
                 chunk = nextState.outputTexts.last(),
-                translatedTextSoFar = nextState.outputTexts.joinToString("\n"),
+                translatedTextSoFar = nextState.outputTexts.joinToString(chunkSeparator(inputFormat)),
                 translatedChunks = nextState.outputTexts.size,
                 totalChunks = totalChunks
             )
@@ -132,7 +171,7 @@ internal fun createTranslationStrategy(
     }
 
     val finalizeTranslation by node<TranslationState, String>("Finalize Translation") { state ->
-        state.outputTexts.joinToString("\n")
+        state.outputTexts.joinToString(chunkSeparator(inputFormat))
     }
 
     nodeStart then detectSourceLanguage then decideTargetLanguage

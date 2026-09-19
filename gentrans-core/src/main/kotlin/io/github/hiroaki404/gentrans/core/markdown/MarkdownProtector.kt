@@ -96,19 +96,31 @@ internal object MarkdownProtector {
      * document, and not produced by [protect], is indistinguishable from a placeholder and will
      * be treated as one here.
      *
-     * @throws PlaceholderMismatchException if any placeholder is missing, altered, duplicated, or
-     *   refers to an unknown block index. No best-effort restoration is attempted in that case.
+     * [expected] restricts which block indices this call requires: it defaults to every index in
+     * [blocks] (the whole-document behavior), but a caller restoring a single chunk of a larger
+     * document (e.g. one produced by [io.github.hiroaki404.gentrans.core.markdown.MarkdownSegmenter])
+     * can pass just the indices that chunk referenced (see [referencedBlockIndices]), so that
+     * placeholders belonging to other chunks are neither required nor accepted here.
+     *
+     * @throws PlaceholderMismatchException if a placeholder in [expected] is missing or altered,
+     *   any placeholder is duplicated, or a placeholder outside [expected] appears. No
+     *   best-effort restoration is attempted in that case.
      */
-    fun restore(translated: String, blocks: List<String>): String {
+    fun restore(translated: String, blocks: List<String>, expected: Set<Int> = blocks.indices.toSet()): String {
         val occurrences = mutableMapOf<Int, Int>()
         for (match in PLACEHOLDER_REGEX.findAll(translated)) {
             val index = match.groupValues[1].toInt()
             occurrences[index] = (occurrences[index] ?: 0) + 1
         }
 
-        val missing = blocks.indices.filter { (occurrences[it] ?: 0) == 0 }
-        val duplicated = occurrences.filterKeys { it in blocks.indices }.filterValues { it > 1 }.keys.sorted()
-        val unknown = occurrences.keys.filterNot { it in blocks.indices }.sorted()
+        // An index is only ever restorable when it is both expected here and a real block, so
+        // treat "expected but out of range" (e.g. a caller-supplied `expected`, or literal
+        // `GENTRANS_BLOCK_n`-shaped text with no matching block) the same as an unknown index,
+        // rather than crashing on the `blocks[...]` lookup below.
+        val restorable = expected.filter { it in blocks.indices }.toSet()
+        val missing = restorable.filter { (occurrences[it] ?: 0) == 0 }.sorted()
+        val duplicated = occurrences.filterKeys { it in restorable }.filterValues { it > 1 }.keys.sorted()
+        val unknown = occurrences.keys.filterNot { it in restorable }.sorted()
 
         if (missing.isNotEmpty() || duplicated.isNotEmpty() || unknown.isNotEmpty()) {
             throw PlaceholderMismatchException(missing, duplicated, unknown)
@@ -118,6 +130,17 @@ internal object MarkdownProtector {
             blocks[match.groupValues[1].toInt()]
         }
     }
+
+    /** The distinct placeholder block indices referenced in [text]. */
+    fun referencedBlockIndices(text: String): Set<Int> =
+        PLACEHOLDER_REGEX.findAll(text).map { it.groupValues[1].toInt() }.toSet()
+
+    /**
+     * True when [text] contains at least one `GENTRANS_BLOCK_n` placeholder and nothing else but
+     * whitespace, meaning it has no natural-language content to translate.
+     */
+    fun isPlaceholderOnly(text: String): Boolean =
+        text.isNotBlank() && PLACEHOLDER_REGEX.replace(text, "").isBlank()
 
     private fun findFrontMatterRange(markdown: String): IntRange? {
         if (!markdown.startsWith("---")) return null

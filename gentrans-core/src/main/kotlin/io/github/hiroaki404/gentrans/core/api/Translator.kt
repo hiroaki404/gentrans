@@ -41,7 +41,7 @@ public class Translator internal constructor(
         val agent = AIAgent(
             promptExecutor = executor,
             llmModel = llmModel,
-            strategy = createTranslationStrategy(languagePromptArgs, request.shouldSummary) { send(it) },
+            strategy = createTranslationStrategy(languagePromptArgs, request.shouldSummary, request.inputFormat) { send(it) },
             installFeatures = installFeatures,
         )
 

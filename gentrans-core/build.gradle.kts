@@ -24,6 +24,7 @@ dependencies {
     implementation(libs.koog.client.ollama)
     implementation(libs.koog.client.google)
     implementation(libs.koog.http.client.java)
+    implementation(libs.jetbrains.markdown)
 }
 
 tasks.test {

@@ -1,0 +1,5 @@
+.*io\.ktor\.server\.sse.*
+Package 'ch' is not found
+.*com\.fasterxml\.jackson\.core\.internal\.shaded\.fdp.*
+.*VarHandle\.set\(.*
+.*annotationType.*

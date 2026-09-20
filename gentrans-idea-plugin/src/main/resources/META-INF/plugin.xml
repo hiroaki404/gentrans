@@ -1,0 +1,14 @@
+<idea-plugin>
+    <id>io.github.hiroaki404.gentrans</id>
+    <name>GenTrans</name>
+    <vendor>hiroaki404</vendor>
+
+    <description><![CDATA[
+        AI-powered Markdown translation. Right-click a Markdown file and run "Translate Markdown"
+        to show the translation in the GenTrans tool window.
+    ]]></description>
+
+    <resource-bundle>messages.GentransBundle</resource-bundle>
+
+    <depends>com.intellij.modules.platform</depends>
+</idea-plugin>

@@ -12,6 +12,12 @@ kotest = "5.9.1"
 ktlint = "13.0.0"
 kotlinx-serialization = "1.10.0"
 jetbrainsMarkdown = "0.7.14"
+# Keep in sync with the hardcoded version in settings.gradle.kts's
+# "org.jetbrains.intellij.platform.settings" plugin declaration.
+# Pinned to 2.11.0 (last release before the 2.12.0 Gradle 9.0.0 minimum bump); this repo's
+# wrapper is Gradle 8.13. 2.11.0 already supports intellijIdea()/androidStudio() unified
+# platform targeting, pluginVerification ides{select{}}, and runIde androidStudio registration.
+intellijPlatformGradlePlugin = "2.11.0"
 
 [libraries]
 kotlinGradlePlugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
@@ -39,3 +45,7 @@ shadow = { id = "com.github.johnrengelman.shadow", version.ref = "shadow" }
 buildconfig = { id = "com.github.gmazzo.buildconfig", version.ref = "buildconfig" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+# Not applied via alias(): gentrans-idea-plugin/build.gradle.kts applies
+# id("org.jetbrains.intellij.platform") without a version, because the
+# "org.jetbrains.intellij.platform.settings" plugin (settings.gradle.kts) already resolves this
+# plugin onto the root build classpath at this intellijPlatformGradlePlugin version.

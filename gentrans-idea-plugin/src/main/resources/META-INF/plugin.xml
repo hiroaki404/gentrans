@@ -11,4 +11,11 @@
     <resource-bundle>messages.GentransBundle</resource-bundle>
 
     <depends>com.intellij.modules.platform</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <applicationConfigurable
+            parentId="tools"
+            instance="io.github.hiroaki404.gentrans.plugin.settings.GentransConfigurable"
+            id="io.github.hiroaki404.gentrans.settings"/>
+    </extensions>
 </idea-plugin>

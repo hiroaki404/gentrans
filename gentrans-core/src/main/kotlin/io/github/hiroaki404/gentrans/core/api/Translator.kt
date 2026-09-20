@@ -60,7 +60,9 @@ public class Translator internal constructor(
 }
 
 internal fun defaultExecutor(config: TranslatorConfig): PromptExecutor =
-    PromptExecutor.builder().addClient(buildLLMClient(config.provider.key, config.apiKey)).build()
+    PromptExecutor.builder()
+        .addClient(buildLLMClient(config.provider.key, config.apiKey, config.ollamaBaseUrl))
+        .build()
 
 @InternalGentransApi
 public fun createTranslator(

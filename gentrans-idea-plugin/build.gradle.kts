@@ -65,8 +65,8 @@ dependencies {
 }
 
 intellijPlatform {
-    // No Settings UI yet, so nothing to make searchable; also avoids booting a sandbox IDE that
-    // instantiates every registered action (noisy Android Studio SEVERE logs, unrelated to us).
+    // Booting a sandbox IDE to index the Settings UI instantiates every registered action too
+    // (noisy Android Studio SEVERE logs, unrelated to us); revisit once that's no longer true.
     buildSearchableOptions = false
 
     pluginConfiguration {

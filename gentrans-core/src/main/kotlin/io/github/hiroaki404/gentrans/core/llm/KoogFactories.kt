@@ -9,7 +9,11 @@ import ai.koog.prompt.llm.LLMCapability
 import ai.koog.prompt.llm.LLMProvider
 import ai.koog.prompt.llm.LLModel
 
-internal fun buildLLMClient(providerName: String, apiKey: String?): LLMClient {
+internal fun buildLLMClient(
+    providerName: String,
+    apiKey: String?,
+    ollamaBaseUrl: String = OllamaClient.DEFAULT_BASE_URL,
+): LLMClient {
     return when (providerName) {
         "google" -> {
             val finalApiKey = apiKey
@@ -29,7 +33,7 @@ internal fun buildLLMClient(providerName: String, apiKey: String?): LLMClient {
             AnthropicLLMClient(apiKey = finalApiKey)
         }
 
-        "ollama" -> OllamaClient()
+        "ollama" -> OllamaClient(baseUrl = ollamaBaseUrl)
 
         else -> throw IllegalArgumentException("Unknown provider: $providerName")
     }

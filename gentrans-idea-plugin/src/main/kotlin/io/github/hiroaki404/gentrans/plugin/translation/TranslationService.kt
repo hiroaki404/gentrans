@@ -33,7 +33,7 @@ internal sealed interface TranslationFailure {
 }
 
 @Service(Service.Level.PROJECT)
-internal class TranslationService(
+internal class TranslationService @JvmOverloads constructor(
     private val project: Project,
     private val scope: CoroutineScope,
     private val translatorFactory: (TranslatorConfig) -> Translator = ::Translator,

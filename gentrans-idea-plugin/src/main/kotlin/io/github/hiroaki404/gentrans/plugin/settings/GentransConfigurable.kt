@@ -31,7 +31,7 @@ internal class GentransConfigurable : BoundConfigurable(GentransBundle.message("
         val result = panel {
             row(GentransBundle.message("gentrans.settings.provider")) {
                 comboBox(SupportedProviders.map { it.key })
-                    .bindItem({ currentProvider.key }, { key -> settings.provider = key ?: currentProvider.key })
+                    .bindItem({ settings.provider }, { key -> settings.provider = key ?: settings.provider })
                     .applyToComponent {
                         addActionListener {
                             val selectedKey = selectedItem as? String ?: return@addActionListener

@@ -25,8 +25,8 @@ import javax.swing.JComponent
 @Service(Service.Level.PROJECT)
 internal class GentransToolWindowPanel(
     private val project: Project,
-    private val preview: TranslationPreview = JBHtmlPaneTranslationPreview(),
 ) : Disposable {
+    private val preview: TranslationPreview = JBHtmlPaneTranslationPreview()
     private val panel = SimpleToolWindowPanel(true, true)
     private var sourceFile: VirtualFile? = null
     private var targetLanguage: String? = null

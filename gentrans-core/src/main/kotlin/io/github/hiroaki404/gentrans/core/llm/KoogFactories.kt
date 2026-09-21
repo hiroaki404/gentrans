@@ -1,5 +1,6 @@
 package io.github.hiroaki404.gentrans.core.llm
 
+import ai.koog.http.client.java.JavaKoogHttpClient
 import ai.koog.prompt.executor.clients.LLMClient
 import ai.koog.prompt.executor.clients.anthropic.AnthropicLLMClient
 import ai.koog.prompt.executor.clients.google.GoogleLLMClient
@@ -14,26 +15,27 @@ internal fun buildLLMClient(
     apiKey: String?,
     ollamaBaseUrl: String = OllamaClient.DEFAULT_BASE_URL,
 ): LLMClient {
+    val httpClientFactory = JavaKoogHttpClient.Factory()
     return when (providerName) {
         "google" -> {
             val finalApiKey = apiKey
                 ?: throw IllegalArgumentException("${providerName.replaceFirstChar { it.uppercase() }} API key is required")
-            GoogleLLMClient(apiKey = finalApiKey)
+            GoogleLLMClient(apiKey = finalApiKey, httpClientFactory = httpClientFactory)
         }
 
         "openai" -> {
             val finalApiKey = apiKey
                 ?: throw IllegalArgumentException("${providerName.replaceFirstChar { it.uppercase() }} API key is required")
-            OpenAILLMClient(apiKey = finalApiKey)
+            OpenAILLMClient(apiKey = finalApiKey, httpClientFactory = httpClientFactory)
         }
 
         "anthropic" -> {
             val finalApiKey = apiKey
                 ?: throw IllegalArgumentException("${providerName.replaceFirstChar { it.uppercase() }} API key is required")
-            AnthropicLLMClient(apiKey = finalApiKey)
+            AnthropicLLMClient(apiKey = finalApiKey, httpClientFactory = httpClientFactory)
         }
 
-        "ollama" -> OllamaClient(baseUrl = ollamaBaseUrl)
+        "ollama" -> OllamaClient(httpClientFactory = httpClientFactory, baseUrl = ollamaBaseUrl)
 
         else -> throw IllegalArgumentException("Unknown provider: $providerName")
     }

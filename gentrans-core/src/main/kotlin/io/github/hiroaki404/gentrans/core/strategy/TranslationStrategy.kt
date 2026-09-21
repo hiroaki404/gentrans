@@ -5,14 +5,13 @@ import ai.koog.agents.core.dsl.builder.strategy
 import io.github.hiroaki404.gentrans.core.api.InputFormat
 import io.github.hiroaki404.gentrans.core.api.TranslationEvent
 import io.github.hiroaki404.gentrans.core.markdown.MarkdownProtector
-import io.github.hiroaki404.gentrans.core.markdown.MarkdownSegmenter
 import io.github.hiroaki404.gentrans.core.model.LanguagePromptArgs
 import io.github.hiroaki404.gentrans.core.prompt.decideTargetLanguagePrompt
 import io.github.hiroaki404.gentrans.core.prompt.detectSourceLanguagePrompt
 import io.github.hiroaki404.gentrans.core.prompt.refineSummaryPrompt
 import io.github.hiroaki404.gentrans.core.prompt.summaryPrompt
 import io.github.hiroaki404.gentrans.core.prompt.translatePrompt
-import io.github.hiroaki404.gentrans.core.utility.splitTextByLinesWithinSize
+import io.github.hiroaki404.gentrans.core.utility.splitForTranslation
 
 internal data class TranslationState(
     val inputTexts: List<String> = emptyList(),
@@ -40,12 +39,9 @@ internal fun createTranslationStrategy(
 ) = strategy<String, String>("GenTrans Strategy") {
     val detectSourceLanguage by node<String, TranslationState>("Detect Source Language") { input ->
         val state = llm.writeSession {
-            val (inputTexts, markdownBlocks) = if (inputFormat == InputFormat.MARKDOWN) {
-                val protected = MarkdownProtector.protect(input)
-                MarkdownSegmenter.split(protected.text, 10_000) to protected.blocks
-            } else {
-                splitTextByLinesWithinSize(input, 10_000) to emptyList()
-            }
+            val chunks = splitForTranslation(input, inputFormat)
+            val inputTexts = chunks.inputTexts
+            val markdownBlocks = chunks.markdownBlocks
             appendPrompt {
                 // Skip placeholder-only chunks (e.g. a lone front matter block) so language
                 // detection sees actual natural-language content.

@@ -17,5 +17,14 @@
             parentId="tools"
             instance="io.github.hiroaki404.gentrans.plugin.settings.GentransConfigurable"
             id="io.github.hiroaki404.gentrans.settings"/>
+        <toolWindow id="GenTrans" anchor="right"
+            factoryClass="io.github.hiroaki404.gentrans.plugin.translation.GentransToolWindowFactory"/>
     </extensions>
+    <actions>
+        <action id="io.github.hiroaki404.gentrans.TranslateMarkdownAction"
+            class="io.github.hiroaki404.gentrans.plugin.translation.TranslateMarkdownAction">
+            <add-to-group group-id="EditorPopupMenu"/>
+            <add-to-group group-id="ProjectViewPopupMenu"/>
+        </action>
+    </actions>
 </idea-plugin>

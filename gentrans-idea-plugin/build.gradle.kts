@@ -48,6 +48,18 @@ dependencies {
     }
 
     testImplementation("junit:junit:4.13.2")
+    // Only for scripting Translator's LLM responses in TranslationServiceTest; never shipped
+    // (test classpath doesn't reach buildPlugin's output). Same platform-supplies-these
+    // exclusions as gentransCore below - agents-test-jvm declares vanilla kotlinx-coroutines-core
+    // directly, which otherwise shadows the platform's patched build on the test classpath.
+    testImplementation(libs.koog.agents.test) {
+        exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib")
+        exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core")
+        exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core-jvm")
+        exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-jdk8")
+        exclude(group = "org.slf4j", module = "slf4j-api")
+        exclude(group = "io.ktor")
+    }
 
     implementation(projects.gentransCore) {
         // The platform already bundles kotlin-stdlib/kotlinx-coroutines-core on its classloader
@@ -61,6 +73,11 @@ dependencies {
         exclude(group = "org.slf4j", module = "slf4j-api")
         // gentrans-core already excludes io.ktor for itself; kept here in case that policy narrows.
         exclude(group = "io.ktor")
+    }
+    implementation(libs.jetbrains.markdown) {
+        // Same platform-supplies-these policy as gentrans-core above; markdown-jvm:0.7.14
+        // declares kotlin-stdlib:2.0.0, which isn't cached offline and must not be bundled anyway.
+        exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib")
     }
 }
 

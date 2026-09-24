@@ -9,6 +9,7 @@ import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextArea
 import com.intellij.util.ui.ExtendableHTMLViewFactory
 import com.intellij.util.ui.JBUI
+import com.intellij.util.ui.StyleSheetUtil
 import org.intellij.markdown.flavours.gfm.GFMFlavourDescriptor
 import org.intellij.markdown.html.HtmlGenerator
 import org.intellij.markdown.parser.MarkdownParser
@@ -86,6 +87,13 @@ internal fun createConfiguredJBHtmlPane(): JBHtmlPane = JBHtmlPane(
     },
     JBHtmlPaneConfiguration.builder()
         .extensions(ExtendableHTMLViewFactory.Extensions.WORD_WRAP, ExtendableHTMLViewFactory.Extensions.FIT_TO_WIDTH_IMAGES)
-        .customStyleSheet("table, th, td { border: 1px solid }")
+        .customStyleSheetProvider { StyleSheetUtil.loadStyleSheet(translationPreviewStyleSheet()) }
         .build(),
 )
+
+internal fun translationPreviewStyleSheet(): String = """
+    body { margin-left: 8px; }
+    blockquote { padding-left: 8px; }
+    table { border-collapse: collapse; }
+    th, td { border: 1px solid; }
+""".trimIndent()

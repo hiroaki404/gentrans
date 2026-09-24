@@ -5,6 +5,15 @@ import com.intellij.testFramework.PlatformTestUtil
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 
 class JBHtmlPaneTranslationPreviewTest : BasePlatformTestCase() {
+    fun testTranslationPreviewStyleSheetDefinesThemeFriendlyLayoutRules() {
+        val styleSheet = translationPreviewStyleSheet()
+
+        assertTrue(styleSheet.contains("body { margin-left: 8px; }"))
+        assertTrue(styleSheet.contains("blockquote { padding-left: 8px; }"))
+        assertTrue(styleSheet.contains("table { border-collapse: collapse; }"))
+        assertTrue(styleSheet.contains("th, td { border: 1px solid; }"))
+    }
+
     fun testRenderConvertsMarkdownToHtmlAndSwitchesToThePreviewCard() {
         val preview = JBHtmlPaneTranslationPreview()
         try {
@@ -15,6 +24,19 @@ class JBHtmlPaneTranslationPreviewTest : BasePlatformTestCase() {
 
             assertTrue(preview.isShowingPreview())
             assertTrue(preview.renderedHtml().contains("Hello"))
+        } finally {
+            Disposer.dispose(preview)
+        }
+    }
+
+    fun testRenderWrapsFencedCodeBlocksForThemeAwareBackground() {
+        val preview = JBHtmlPaneTranslationPreview()
+        try {
+            preview.render("```kotlin\nfun greet() {}\n```")
+
+            PlatformTestUtil.waitWhileBusy { !preview.isShowingPreview() }
+
+            assertTrue(preview.renderedHtml().contains("class=\"code-block\""))
         } finally {
             Disposer.dispose(preview)
         }

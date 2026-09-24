@@ -1,10 +1,10 @@
 package io.github.hiroaki404.gentrans.plugin.settings
 
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
+import org.junit.Assert.assertEquals
 import java.awt.Container
 import javax.swing.JComboBox
 import javax.swing.JComponent
-import org.junit.Assert.assertEquals
 
 class GentransConfigurableTest : BasePlatformTestCase() {
     fun testCreatingAndResettingThePanelDoesNotThrowWhenTheStoredProviderIsUnsupported() {

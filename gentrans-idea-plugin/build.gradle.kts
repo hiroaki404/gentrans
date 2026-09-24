@@ -11,7 +11,7 @@ plugins {
 }
 
 group = "io.github.hiroaki404"
-version = libs.versions.pluginVersion.get()
+version = libs.versions.gentrans.get()
 
 // Locally installed IDEs, used instead of downloading a platform artifact.
 // Override via -Pgentrans.localIdePath / -Pgentrans.localIdeaPath for a different machine/CI.

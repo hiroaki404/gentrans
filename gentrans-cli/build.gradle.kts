@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "io.github.hiroaki404"
-version = libs.versions.cliVersion.get()
+version = libs.versions.gentrans.get()
 
 repositories {
     mavenCentral()

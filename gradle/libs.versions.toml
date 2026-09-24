@@ -1,6 +1,5 @@
 [versions]
-cliVersion = "0.3.1"
-pluginVersion = "0.1.0"
+gentrans = "0.4.0"
 kotlin = "2.3.10"
 shadow = "8.1.1"
 clikt = "5.0.3"

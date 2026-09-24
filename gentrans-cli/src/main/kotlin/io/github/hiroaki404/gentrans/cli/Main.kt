@@ -18,6 +18,7 @@ import io.github.hiroaki404.gentrans.core.api.TranslationRequest
 import io.github.hiroaki404.gentrans.core.api.Translator
 import io.github.hiroaki404.gentrans.core.api.TranslatorConfig
 import io.github.hiroaki404.gentrans.core.api.createTranslator
+import io.github.oshai.kotlinlogging.KotlinLoggingConfiguration
 
 class GenTransCommand(
     private val translatorFactory: (TranslatorConfig) -> Translator = { config ->
@@ -98,4 +99,11 @@ class GenTransCommand(
     }
 }
 
-suspend fun main(args: Array<String>) = GenTransCommand().main(args)
+internal fun suppressKotlinLoggingStartupMessage() {
+    KotlinLoggingConfiguration.logStartupMessage = false
+}
+
+suspend fun main(args: Array<String>) {
+    suppressKotlinLoggingStartupMessage()
+    GenTransCommand().main(args)
+}

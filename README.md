@@ -1,159 +1,149 @@
 # 🌍 gentrans
 
-**An AI-powered translation tool on your command line.**
-
-[//]: # "[![Release](https://img.shields.io/github/v/release/hiroaki404/gentrans?style=flat-square)](https://github.com/hiroaki404/gentrans/releases)"
-
-[//]: # "[![License](https://img.shields.io/github/license/hiroaki404/gentrans?style=flat-square)](LICENSE)"
-
-[//]: # "[![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-blue?style=flat-square)](#installation)"
+**An AI-powered translation tool for the command line and IntelliJ IDEA / Android Studio.**
 
 ---
 
 ## 📋 Table of Contents
 
 - [About](#-about)
-- [Features](#-features)
-- [Prerequisites](#-prerequisites)
-- [Installation](#-installation)
-- [Usage](#-usage)
-- [Configuration](#-configuration)
-- [Command Reference](#-command-reference)
-- [Limitations](#-limitations)
-- [Work In Progress (WIP)](#-work-in-progress-wip)
+- [IntelliJ IDEA and Android Studio Plugin](#intellij-idea-and-android-studio-plugin)
+  - [Plugin Features](#-plugin-features)
+  - [Supported IDEs](#-supported-ides)
+  - [Plugin Installation](#-plugin-installation)
+  - [Plugin Settings](#-plugin-settings)
+  - [Plugin Usage](#-plugin-usage)
+  - [Plugin Limitations](#-plugin-limitations)
+- [Command-Line Interface (CLI)](#command-line-interface-cli)
+  - [CLI Features](#-cli-features)
+  - [CLI Prerequisites](#-cli-prerequisites)
+  - [CLI Installation](#-cli-installation)
+  - [CLI Usage](#cli-usage)
+  - [CLI Configuration](#cli-configuration)
+  - [Command Reference (abridged)](#-command-reference-abridged)
+  - [CLI Limitations](#cli-limitations)
+  - [Work In Progress (WIP)](#-work-in-progress-wip)
+- [Build from Source](#-build-from-source)
+- [Data Privacy](#-data-privacy)
 - [Contributing](#-contributing)
+- [Disclaimer](#-disclaimer)
 - [License](#-license)
 
 ---
 
 ## 🔍 About
 
-`gentrans` is a Command-Line Interface (CLI) tool that leverages the power of Generative AI to provide high-quality text
-translation directly in your terminal.
+`gentrans` has two forms: a command-line interface (CLI) for translating terminal input, and an IntelliJ IDEA / Android Studio plugin for previewing Markdown translations in the IDE. They share version `0.4.0`; their ZIP files are published together in one GitHub Release.
 
 ---
 
-## ✨ Features
+# IntelliJ IDEA and Android Studio Plugin
+
+## ✨ Plugin Features
+
+- **Markdown Translation Preview** - **Translate Markdown** opens the **GenTrans** tool window and renders translated chunks progressively.
+- **Selection or Document Translation** - In an editor, a non-empty selection is translated; otherwise the whole editor document is translated.
+- **Preview Toolbar** - **Copy**, **Save as**, **Cancel**, and **Re-run**.
+- **Long-text Confirmation** - A confirmation dialog is shown at five or more chunks.
+- **Protected Markdown** - In Markdown mode, YAML front matter at the very start of the translated text and fenced code blocks are replaced with placeholders and restored locally. Indented code blocks, HTML, inline code, URLs, and image paths are sent as-is.
+
+## 💻 Supported IDEs
+
+- **IntelliJ IDEA 2026.1+ (build 261+)** or **Android Studio 2026.1+ (build 261+)**
+- No separate JDK installation is needed to use the plugin; the supported IDE provides its bundled JetBrains Runtime (JBR).
+
+## 📦 Plugin Installation
+
+1. Download `gentrans-idea-plugin-<version>.zip` from [GitHub Releases](https://github.com/hiroaki404/gentrans/releases).
+2. Open **Settings > Plugins**, select the gear icon, and choose **Install Plugin from Disk...**.
+3. Select the ZIP file and restart the IDE if prompted.
+
+The plugin is distributed through GitHub Releases only and is not published on the JetBrains Marketplace. Updates are not automatic; manually install a newer ZIP over the existing plugin. The IDE may show an unsigned-plugin warning.
+
+## 🔧 Plugin Settings
+
+Open **Settings > Tools > GenTrans** to configure Provider, Model, API key, Target language, Native language, Second language, and Ollama base URL.
+
+The defaults are provider **OpenAI**, model `gpt-4o-mini`, native language **Japanese**, and second language **English**. The API key field is disabled for Ollama, and the Ollama base URL is shown only when Ollama is selected.
+
+The first release offers **OpenAI**, **Google**, **Anthropic**, and **Ollama**. Google uses Koog's beta client (`1.2.0-beta`), so its behavior may change between releases.
+
+API keys are stored through the IDE PasswordSafe under a provider-specific GenTrans service name. The persistent plugin settings state stores the other fields in `gentrans.xml`; it has no API-key field.
+
+## 🚀 Plugin Usage
+
+Your text is sent to the configured AI provider — see [Data Privacy](#-data-privacy).
+
+1. Set the provider, model, API key, and language settings in **Settings > Tools > GenTrans**.
+2. Open a Markdown file in an editor, right-click it, and select **Translate Markdown**.
+3. Review the result in the **GenTrans** tool window as chunks arrive.
+4. Use **Copy** or **Save as**. Save as creates `<nameWithoutExtension>.<target-language>.md` beside the source. It uses the model's normalized English target-language name, lowercased with whitespace replaced by hyphens; for example, `README.japanese.md`, even when the setting was `ja`. It asks before overwriting an existing file. If target-language decision has not completed, Save as does nothing. For a selection translation, it saves only the translated selection.
+
+## ❗ Plugin Limitations
+
+- The preview renders Markdown as HTML but does not add syntax highlighting for code fences.
+- Image URLs in the preview may be fetched by the IDE.
+- The plugin has no summary-specific or comment-translation workflow. Selection translation is supported.
+- The plugin has no proxy settings and its UI is English only.
+- The target language comes from settings. Leaving it empty uses the configured native and second languages to decide the target language.
+- Requires the IDE's bundled Markdown plugin to be enabled. Invoking **Translate Markdown** from the Project View currently does nothing; use the editor context menu.
+
+---
+
+# Command-Line Interface (CLI)
+
+## ✨ CLI Features
 
 - **Direct Translation** - Translate text directly from command-line arguments.
-- **Pipe Support** - Read text from standard input (stdin) to work seamlessly with pipes (`|`).
-- **Text Summarization** - Summarize long texts before translation using the `-s` or `--summary` option.
-- **Markdown Support** - Translate Markdown documents with `-m markdown` / `--format markdown`, keeping fenced code blocks and front matter intact.
-- **Multiple AI Providers** - Support for multiple AI providers (e.g., OpenAI, Gemini).
-- **Model Selection** - Select specific models for translation.
-- **Environment Variable Support** - Configure API keys and settings via environment variables.
+- **Pipe Support** - Read text from standard input (stdin) to work with pipes (`|`).
+- **Text Summarization** - Summarize long texts before translation with `-s` or `--summary`.
+- **Markdown Support** - Translate Markdown with `-m markdown` / `--format markdown`, protecting YAML front matter and fenced code blocks.
+- **AI Providers** - Use OpenAI, Google, Anthropic, or Ollama.
+- **Model Selection** - Choose a provider-supported model.
+- **Environment Variable Support** - Configure the CLI through environment variables.
 
----
-
-## 📋 Prerequisites
-
-To run `gentrans`, you need to have **Java** installed on your system:
+## 📋 CLI Prerequisites
 
 - **Java Development Kit (JDK) 17** or newer
 
----
+## 📦 CLI Installation
 
-## 📦 Installation
-
-1. **Download and Extract**
-   Download the latest release from the [GitHub Releases](https://github.com/hiroaki404/gentrans/releases) page and
-   extract it.
-
-2. **Add to PATH**
-   Add the `bin` directory from the extracted folder to your system's PATH to make `gentrans` accessible from any
-   terminal.
-
-3. **Verify Installation**
-   Run the following command to ensure it's installed correctly:
-   ```bash
-   gentrans --version
-   ```
-
-### 🛠️ Build from Source
-
-For development or if you want to build from source:
+1. Download `gentrans-<version>.zip` from [GitHub Releases](https://github.com/hiroaki404/gentrans/releases) and extract it. This is the CLI ZIP, not `gentrans-idea-plugin-<version>.zip`.
+2. Add its `bin` directory to your system PATH.
+3. Verify the installation:
 
 ```bash
-git clone https://github.com/hiroaki404/gentrans.git
-cd gentrans
-./gradlew build
-./gentrans-cli/build/install/gentrans/bin/gentrans --version
+gentrans --version
 ```
-
-#### 🐛 Debug Mode
-
-For debugging and development:
-
-```bash
-# Debug mode with verbose logging
-./gradlew :gentrans-cli:run --args="hello"
-
-# Explicit debug build
-./gradlew -Pdebug=true installDist
-./gentrans-cli/build/install/gentrans/bin/gentrans "hello"
-
-# Production build (no debug logs)
-./gradlew installDist
-# or
-./gradlew build
-./gentrans-cli/build/install/gentrans/bin/gentrans "hello"
-```
-
-Note: If you are debugging, you will need ollama for testing.
-If you want to use tracing for debug, you need to set up langfuse, and use `--trace` debug only option.
-If you have a trouble, please `./gradlew clean` or make an issue.
-
-To verify the ktor-free HTTP path (`ai.koog:http-client-java`) can actually reach the LLM
-providers, run `./gradlew :gentrans-core:smokeTest`. It needs network access but no API key
-(it expects auth failures), and is excluded from the normal `test` task and CI.
 
 ---
 
-## Usage
+## CLI Usage
+
+Your text is sent to the configured AI provider — see [Data Privacy](#-data-privacy).
 
 ### 💬 Basic Translation
-
-Provide the text you want to translate as an argument:
 
 ```bash
 $ gentrans "こんにちは世界"
 # Expected: Hello, world
-
 $ gentrans -t ja "Hello World"
 # Expected: こんにちは世界
-
 $ gentrans -t French "Hello"
 # Expected: Bonjour
 ```
 
-**Language Format Flexibility**: You can specify target languages in various formats since they are interpreted by the
-LLM. For example: `English`, `en`, `Japanese`, `ja`, `日本語`, `French`, `fr`, etc.
+Target languages are interpreted by the LLM, so formats such as `English`, `en`, `Japanese`, `ja`, `日本語`, `French`, and `fr` can be used.
 
 ### 🔀 Piping from Standard Input
 
-Use `gentrans` as part of a command pipeline:
-
 ```bash
 $ echo "CLIツールは開発者にとって強力な武器です。" | gentrans
-# Expected: CLI tools are powerful weapons for developers.
-```
-
-Translate the content of a file:
-
-```bash
 $ cat document_ja.txt | gentrans > document_en.txt
-```
-
-or clipboard
-
-```bash
 $ pbpaste | gentrans # macOS
 ```
 
 ### 📝 Translating Markdown
-
-Use `-m markdown` (or `--format markdown`) to translate Markdown documents. Fenced code blocks and YAML front matter
-are kept verbatim, and the LLM is instructed to preserve Markdown syntax:
 
 ```bash
 $ cat README.md | gentrans --format markdown --to Japanese > README.ja.md
@@ -161,105 +151,60 @@ $ cat README.md | gentrans --format markdown --to Japanese > README.ja.md
 
 ### 🤖 Specifying AI Provider and Model
 
-You can specify the AI provider and model to use for translation.
-
 ```bash
-# Use Gemini
 $ gentrans --provider google "こんにちは"
-
-# Use a specific OpenAI model
 $ gentrans --provider openai --model gpt-4o "こんにちは"
 ```
 
 ---
 
-## Configuration
+## CLI Configuration
 
-Configuration can be done via command-line flags and environment variables.
+Configuration is resolved in this order: command-line flags, environment variables, then built-in defaults. There is no local configuration source yet. The defaults are `openai`, `gpt-4o`, and English for both native and second languages. With the defaults (both English), all input is translated into English.
 
-Configuration settings are prioritized in the following order:
+**Note:** The CLI does not support registering and switching between multiple providers or models. You can only use one provider and model configuration at a time.
 
-1. **Command-line flags** (highest priority)
-2. **Environment variables**
-3. **Default values** (lowest priority)
+### Command-line flags
 
-This means that any setting provided as a command-line flag will override the corresponding environment variable, which
-in turn overrides the default value.
-
-If no configuration is specified, the following default values will be used:
-
-- **Default Provider**: `openai`
-- **Default Model**: `gpt-4o`
-- **Default Native Language**: `English`
-- **Default Second Language**: `English`
-
-**Note:** Currently, `gentrans` does not support registering and switching between multiple providers or models. You can
-only use one provider and model configuration at a time.
-
-### Command-line flags:
-
-- `--apikey`: Your secret API Key for the translation service.
-- `--provider`: AI Provider to use. Supported providers are `google`, `openai`, `anthropic`, `meta`, `alibaba`,
-  `openrouter`, and `ollama`.
+- `--apikey`: API key for the selected provider.
+- `--provider`: The CLI accepts `google`, `openai`, `anthropic`, `meta`, `alibaba`, `openrouter`, and `ollama`. Clients are implemented only for `google`, `openai`, `anthropic`, and `ollama`; choosing `meta`, `alibaba`, or `openrouter` fails during client construction with `Unknown provider: <name>`.
 - `--model`: AI model to use. This tool relies on the [Koog](https://github.com/JetBrains/koog) library, so only models
   supported by Koog can be used. For a detailed list, please refer to the official Koog documentation (
   e.g., [GoogleModels.kt](https://github.com/JetBrains/koog/blob/develop/prompt/prompt-executor/prompt-executor-clients/prompt-executor-google-client/src/commonMain/kotlin/ai/koog/prompt/executor/clients/google/GoogleModels.kt)).
   Representative models include `gemini-2.0-flash`, `gpt-4o`, `o3`, `gpt-4o-mini`, `claude-3-opus`, `claude-sonnet-4-0`,
   `gemma3n:latest`, and `llama3.2:latest`.
-- `-m, --format`: Input text format. `plain` (default) or `markdown`. With `markdown`, fenced code blocks and front
-  matter are kept verbatim and Markdown syntax is preserved.
+- `-m, --format`: `plain` (default) or `markdown`.
 
-### Environment variables:
+### Environment variables
 
-- `GENTRANS_API_KEY`: Your secret API Key for the translation service.
-- `GENTRANS_PROVIDER`: AI Provider to use (e.g., `openai`, `google`).
-- `GENTRANS_MODEL`: AI model to use (e.g., `gpt-4o`, `gemini-2.0-flash`).
-- `GENTRANS_NATIVE_LANGUAGE`: Your native language (e.g., `Japanese`, `English`). You can use various formats like
-  `Japanese`, `ja`, `日本語`, etc.
-- `GENTRANS_SECOND_LANGUAGE`: Your second language (e.g., `English`, `Japanese`). You can use various formats like
-  `English`, `en`, `英語`, etc.
+- `GENTRANS_API_KEY`: API key for the selected provider.
+- `GENTRANS_PROVIDER`: Provider name, such as `openai`, `google`, `anthropic`, or `ollama`.
+- `GENTRANS_MODEL`: Model name for the selected provider.
+- `GENTRANS_NATIVE_LANGUAGE`: Native language used when deciding a target language.
+- `GENTRANS_SECOND_LANGUAGE`: Second language used when deciding a target language.
 
-Regarding GENTRANS_NATIVE_LANGUAGE and GENTRANS_SECOND_LANGUAGE, there is an explanation in the Automatic Bidirectional
-Translation section below.
-
-### Usage Examples:
+Native and second languages can only be set via environment variables in the CLI. Language values can use forms such as `Japanese`, `ja`, or `日本語`.
 
 ```bash
-# Using environment variables
 export GENTRANS_API_KEY="your-api-key-here"
 export GENTRANS_PROVIDER="openai"
 export GENTRANS_MODEL="gpt-4o"
 gentrans "こんにちは世界"
 
-# Using command-line flags (overrides environment variables)
-gentrans --apikey "your-api-key" --provider "gemini" --model "gemini-2.0-flash" "こんにちは世界"
-
-# Manual target language specification (overrides automatic mode)
-gentrans -t "French" "Hello World"  # → Bonjour
+# Command-line flags override environment variables.
+gentrans --apikey "your-api-key" --provider "google" --model "gemini-2.0-flash" "こんにちは世界"
 ```
 
 ### 🔄 Automatic Language Detection Translation
 
-Configure your native and second languages for automatic translation. The translation behavior follows these rules:
-
-- **When `-t` option is specified**: Translates to the specified target language (manual mode)
-- **When `-t` option is not specified**: Automatic translation mode based on input language detection:
-    - If input is in your **native language** → translates to your **second language**
-    - If input is in your **second language** → translates to your **native language**
-    - If input is in **any other language** → translates to your **native language**
-- **Default behavior**: Both native and second languages default to English. Without the `-t` option, English input
-  returns as-is, while all other languages are translated to English.
+With `-t`, gentrans uses the requested target. Without it, detected native-language input translates to the second language, second-language input translates to the native language, and other input translates to the native language. With the defaults (both English), all input is translated into English.
 
 ```bash
-# Configure languages
 export GENTRANS_NATIVE_LANGUAGE="Japanese"
-# export GENTRANS_SECOND_LANGUAGE="English" # Default is English, so no need to set this
-
-# Automatic translation based on input language
-gentrans "Hello World"        # → こんにちは世界 (English → Japanese)
-gentrans "こんにちは世界"      # → Hello World (Japanese → English)
-gentrans "Bonjour"            # → こんにちは (French → Japanese)
-gentrans "Hola"               # → こんにちは (Spanish → Japanese)
+# GENTRANS_SECOND_LANGUAGE defaults to English.
+gentrans "Hello World" # → こんにちは世界
+gentrans "こんにちは世界" # → Hello World
+gentrans "Bonjour" # → こんにちは
 ```
 
 ### ✅ Verified Combinations
@@ -275,11 +220,9 @@ The following combinations of providers and models have been tested and are know
 | `ollama` | `llama3.2:latest`       |
 | `ollama` | `gemma3n:latest`        |
 
----
+Google uses Koog's beta client (`1.2.0-beta`), so its behavior may change between releases.
 
-## 📖 Command Reference
-
-### 🌍 Main Command: Translation
+## 📖 Command Reference (abridged)
 
 ```
 USAGE:
@@ -291,86 +234,87 @@ ARGS:
 OPTIONS:
         --apikey <APIKEY>  API key for the AI provider.
         --provider <PROVIDER>
-                           AI provider to use. Supported providers are `google`, `openai`, `anthropic`, `meta`, `alibaba`, `openrouter`, and `ollama`.
-        --model <MODEL>    AI model to use. e.g. `gemini-2.0-flash`, `gpt-4o`, `claude-3-opus`, `gemma3n:latest`, `llama3.2:latest`. Supported models depend on the Koog library. See documentation for details.
-    -t, --to <LANGUAGE>    Specify the target language. Since the language is interpreted by an LLM, you can use various formats like `English`, `en`, or even `日本語`.
-    -s, --summary          Enable text summarization before translation. Useful for long texts.
-    -m, --format <FORMAT>  Input text format. `plain` (default) or `markdown`. With `markdown`, fenced code blocks and front matter are kept verbatim and Markdown syntax is preserved.
-    -h, --help             Print help information
-        --version          Print version information
+                           Accepted keys: google, openai, anthropic, meta, alibaba, openrouter, ollama.
+                           Client implementations: google, openai, anthropic, ollama.
+        --model <MODEL>    Model availability depends on the selected provider and Koog client.
+    -t, --to <LANGUAGE>    Specify the target language.
+    -s, --summary          Enable text summarization before translation.
+    -m, --format <FORMAT>  Input format: plain (default) or markdown.
+    -h, --help             Print help information.
+        --version          Print version information.
 ```
 
----
-
-## ⚠️ Limitations
-
-Please be aware of the following limitations when translating long texts:
+## CLI Limitations
 
 ### Long Text Input Constraints
 
-- **Language Detection Accuracy**: For long texts, automatic language detection is applied based on the initial chunk,
-  which may not accurately represent the language of the entire text
-- **Contextual Continuity**: Since translation is performed in chunks, long texts may occasionally experience
-  inconsistent connections between translated segments
-- **Line-Based Splitting**: Currently, long text chunking is performed by line breaks (applies to `plain` format), so
-  translation of long passages without line breaks may not be handled properly
-
-Due to these limitations, when translating long texts, it is recommended to either structure the text with appropriate
-line breaks or divide the text into manageable segments before translation.
+- Language detection for long input uses the first non-placeholder chunk, which might not represent the whole text.
+- Translation is performed in chunks, so continuity between translated segments can be inconsistent.
+- Plain-text input is split at line breaks; a single long line is not split further and can exceed the chunk size.
 
 ### Markdown Input
 
-- Only fenced code blocks and YAML front matter are protected from translation; inline code spans, URLs, and image
-  paths are not shielded and instead rely on the translation prompt's instructions to be left untranslated.
-- A single Markdown block (e.g. a very long table or list) that alone exceeds the chunk size limit is translated as
-  one chunk without being split further, since splitting it could break its structure.
-- Combining `--format markdown` with `-s`/`--summary` is not supported: summarization may alter or drop the
-  placeholder tokens used to protect blocks, causing translation to fail.
-
----
+- Only fenced code blocks and YAML front matter are protected. Inline code spans, URLs, and image paths are not shielded.
+- A single Markdown block exceeding the chunk size limit is not split further.
+- Combining `--format markdown` with `-s`/`--summary` is not recommended: the summary may drop protected blocks, and if it duplicates or alters a placeholder the command fails with "Markdown placeholder mismatch detected".
 
 ## 🚧 Work In Progress (WIP)
 
-The following features are planned but not yet implemented:
-
-- **Flexible Configuration System:**
-    - Configuration via a file (`~/.config/gentrans/config.toml`).
-    - Multiple provider/model profiles with easy switching.
-- **Advanced Translation Options:**
-    - `-f`, `--from <LANGUAGE>`: Specify the source language.
-    - `-T`, `--tone <TONE>`: Define the translation tone/style (e.g., `formal`, `casual`, `technical`).
-- **`config` Subcommand:**
-    - A dedicated command (`gentrans config`) to easily manage settings (`set`, `get`, `list`).
+Planned CLI work includes file-based configuration, provider/model profiles, source-language and tone options, and a `gentrans config` subcommand.
 
 ---
+
+# Shared Information
+
+## 🔨 Build from Source
+
+```bash
+# CLI
+./gradlew :gentrans-cli:installDist
+./gentrans-cli/build/install/gentrans/bin/gentrans --version
+# Plugin (needs a local Android Studio install, see below)
+./gradlew :gentrans-idea-plugin:buildPlugin
+```
+
+The plugin ZIP is written to `gentrans-idea-plugin/build/distributions/`. The plugin module uses a JDK 21 toolchain. Building the plugin needs a local Android Studio installation; `buildPlugin` uses Android Studio at `~/Applications/Android Studio.app` by default. IntelliJ IDEA at `~/Applications/IntelliJ IDEA.app` by default is used by `verifyPlugin` and `runIdea`.
+
+### 🐛 Debug Mode
+
+```bash
+# Debug build; --trace is effective when passed through --args.
+./gradlew :gentrans-cli:run --args="hello"
+# Debug build; --trace is effective in the installed binary.
+./gradlew -Pdebug=true installDist
+./gentrans-cli/build/install/gentrans/bin/gentrans "hello"
+# Release build; --trace is ignored.
+./gradlew installDist
+```
+
+`IS_DEBUG` affects only `--trace`. `--trace` is effective only with `:gentrans-cli:run` or a debug-built binary, and requires Langfuse setup.
+
+`./gradlew test` also runs local Ollama `gemma3n:latest` integration tests; set `CI=true` to skip them. The real-HTTP checks in `./gradlew :gentrans-core:smokeTest` target only the OpenAI and Google endpoints. This manual check needs network access but no API key (it expects authentication failures), and it is excluded from regular `test` and CI.
+
+## 🔒 Data Privacy
+
+- Source-language detection sends the first non-placeholder chunk to the selected provider. For every translation, target-language decision is a second LLM request to that provider. The detected and target languages are normalized to standard English names, including when `-t` or Settings use another form. The target-language request includes the detected language name, the native and second languages or explicit target setting, and the preceding detection exchange, including that chunk.
+- The plugin sends the selected text or, with no selection, the entire editor document, including unsaved changes. The CLI sends text supplied as an argument or through standard input. Long input can be sent in multiple translation requests.
+- Only Markdown mode (the plugin and CLI `-m markdown`) replaces YAML front matter at the beginning of the text to translate and fenced code blocks with placeholders before sending them, then restores them locally. For a selection, front matter is protected only when the selection starts with `---`. All other content, including indented code blocks, HTML, inline code, URLs, and image paths, is sent as-is. The CLI's default plain mode performs no replacement. Image URLs in the plugin preview may be fetched by the IDE.
+- The Ollama CLI uses the fixed URL `http://localhost:11434`. The plugin uses that URL when its Ollama base URL is empty. Depending on the Ollama setup, for example a cloud-hosted model, input can leave the machine; setting the plugin URL to another host sends input there.
+- gentrans does not collect analytics or usage telemetry. In CLI debug builds only (`:gentrans-cli:run` or `-Pdebug=true`), `--trace` enables OpenTelemetry with the Langfuse exporter in verbose mode and sends full prompts and responses, including input text, to the configured Langfuse host. It requires `LANGFUSE_PUBLIC_KEY` and `LANGFUSE_SECRET_KEY`; the host is selected from `LANGFUSE_HOST`, then `LANGFUSE_BASE_URL`, then `https://cloud.langfuse.com`. Release builds ignore `--trace`, and the plugin has no tracing.
+- API keys are supplied only to the selected provider's client. The plugin stores them in IDE PasswordSafe; CLI keys may be passed as a command-line option or environment variable.
+- For confidential documents, review the selected provider's terms and data-handling policy before use. Providers differ in how they handle API inputs, including whether inputs are used for training.
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please feel free to:
-
-- 🐛 **Report bugs** by opening an issue
-- 💡 **Suggest features** through discussions
-- 🔧 **Submit pull requests** to improve the tool
-
-Before contributing, please check our [contribution guidelines](CONTRIBUTING.md).
-
----
+Contributions are welcome: report bugs by opening an issue, suggest features through discussions, or submit pull requests.
 
 ## 📜 Disclaimer
 
-- **API Keys**: You are responsible for managing your own API keys. This tool does not store or transmit your keys to
-  any third party other than the selected AI provider. Please be aware of the security risks when passing API keys as
-  command-line arguments or setting them as environment variables.
-- **Translation Quality**: The quality of translations depends on the AI provider and model. We are not responsible for
-  any inaccuracies or errors in the translated text.
-- **Usage Costs**: Use of AI provider APIs may incur costs. You are responsible for all costs associated with your use
-  of the APIs.
-- **No Warranty**: This tool is provided "as is" without any warranties. The developer is not responsible for any damage
-  or loss resulting from the use of this tool.
-
----
+- **API Keys**: You are responsible for managing your API keys and for the security risks of CLI arguments and environment variables.
+- **Translation Quality**: Translation quality depends on the selected provider and model.
+- **Usage Costs**: Provider APIs can incur costs, for which you are responsible.
+- **No Warranty**: This tool is provided "as is" without warranties. The developer is not responsible for damage or loss resulting from its use.
 
 ## 📄 License
 
 This project is licensed under the [Apache License 2.0](LICENSE).
-

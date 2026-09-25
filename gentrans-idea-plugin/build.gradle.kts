@@ -130,3 +130,12 @@ intellijPlatformTesting {
 tasks.test {
     useJUnitPlatform()
 }
+
+tasks.processResources {
+    from(rootProject.file("LICENSE")) {
+        into("META-INF")
+    }
+    from(rootProject.file("THIRD_PARTY_NOTICES.md")) {
+        into("META-INF")
+    }
+}

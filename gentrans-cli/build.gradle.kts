@@ -54,3 +54,11 @@ application {
     mainClass.set("io.github.hiroaki404.gentrans.cli.MainKt")
     applicationName = "gentrans"
 }
+
+// Keep legal notices at the root of both the standard and Shadow CLI distributions.
+distributions.configureEach {
+    contents {
+        from(rootProject.file("LICENSE"))
+        from(rootProject.file("THIRD_PARTY_NOTICES.md"))
+    }
+}

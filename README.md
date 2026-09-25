@@ -317,4 +317,4 @@ Contributions are welcome: report bugs by opening an issue, suggest features thr
 
 ## 📄 License
 
-This project is licensed under the [Apache License 2.0](LICENSE).
+This project is licensed under the [Apache License 2.0](LICENSE). Licenses of bundled third-party software are listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md), which is also included in the CLI and plugin ZIP files. Release notes are in [CHANGELOG.md](CHANGELOG.md).

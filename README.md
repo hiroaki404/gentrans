@@ -42,7 +42,7 @@
 ## ✨ Plugin Features
 
 - **Markdown Translation Preview** - **Translate Markdown** opens the **GenTrans** tool window and renders translated chunks progressively.
-- **Selection or Document Translation** - In an editor, a non-empty selection is translated; otherwise the whole editor document is translated.
+- **Selection or Document Translation** - In an editor, a non-empty selection is translated; otherwise the whole editor document is translated. From the Project View, the whole file is translated, including unsaved changes if it is open in an editor.
 - **Preview Toolbar** - **Copy**, **Save as**, **Cancel**, and **Re-run**.
 - **Long-text Confirmation** - A confirmation dialog is shown at five or more chunks.
 - **Protected Markdown** - In Markdown mode, YAML front matter at the very start of the translated text and fenced code blocks are replaced with placeholders and restored locally. Indented code blocks, HTML, inline code, URLs, and image paths are sent as-is.
@@ -75,7 +75,7 @@ API keys are stored through the IDE PasswordSafe under a provider-specific GenTr
 Your text is sent to the configured AI provider — see [Data Privacy](#-data-privacy).
 
 1. Set the provider, model, API key, and language settings in **Settings > Tools > GenTrans**.
-2. Open a Markdown file in an editor, right-click it, and select **Translate Markdown**.
+2. Right-click a Markdown file in an editor or in the Project View, and select **Translate Markdown**.
 3. Review the result in the **GenTrans** tool window as chunks arrive.
 4. Use **Copy** or **Save as**. Save as creates `<nameWithoutExtension>.<target-language>.md` beside the source. It uses the model's normalized English target-language name, lowercased with whitespace replaced by hyphens; for example, `README.japanese.md`, even when the setting was `ja`. It asks before overwriting an existing file. If target-language decision has not completed, Save as does nothing. For a selection translation, it saves only the translated selection.
 
@@ -86,7 +86,7 @@ Your text is sent to the configured AI provider — see [Data Privacy](#-data-pr
 - The plugin has no summary-specific or comment-translation workflow. Selection translation is supported.
 - The plugin has no proxy settings and its UI is English only.
 - The target language comes from settings. Leaving it empty uses the configured native and second languages to decide the target language.
-- Requires the IDE's bundled Markdown plugin to be enabled. Invoking **Translate Markdown** from the Project View currently does nothing; use the editor context menu.
+- Requires the IDE's bundled Markdown plugin to be enabled.
 
 ---
 

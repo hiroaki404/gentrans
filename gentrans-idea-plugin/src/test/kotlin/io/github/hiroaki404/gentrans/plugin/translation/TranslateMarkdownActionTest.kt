@@ -20,6 +20,49 @@ private class StubFileType(private val fileTypeName: String) : FileType {
 }
 
 class TranslateMarkdownActionTest : BasePlatformTestCase() {
+    fun testTranslationTextUsesNonEmptySelectionFirst() {
+        assertEquals(
+            "selected",
+            translationText(
+                selectedText = "selected",
+                editorText = "editor",
+                fileText = "file",
+            ),
+        )
+    }
+
+    fun testTranslationTextUsesEditorTextWhenSelectionIsEmpty() {
+        assertEquals(
+            "editor",
+            translationText(
+                selectedText = "",
+                editorText = "editor",
+                fileText = "file",
+            ),
+        )
+    }
+
+    fun testTranslationTextUsesFileTextWhenEditorIsUnavailable() {
+        assertEquals(
+            "file",
+            translationText(
+                selectedText = null,
+                editorText = null,
+                fileText = "file",
+            ),
+        )
+    }
+
+    fun testTranslationTextReturnsNullWhenNoTextIsAvailable() {
+        assertNull(
+            translationText(
+                selectedText = null,
+                editorText = null,
+                fileText = null,
+            ),
+        )
+    }
+
     fun testIsMarkdownFileTypeMatchesOnlyTheMarkdownFileType() {
         assertTrue(isMarkdownFileType(StubFileType(MARKDOWN_FILE_TYPE_NAME)))
         assertFalse(isMarkdownFileType(StubFileType("PLAIN_TEXT")))

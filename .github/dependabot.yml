@@ -1,0 +1,14 @@
+version: 2
+updates:
+  # For Koog updates in gradle/libs.versions.toml, review IDE compatibility and Ktor exclusions; run local :gentrans-idea-plugin:verifyPlugin and :gentrans-core:smokeTest before merging.
+  - package-ecosystem: gradle
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 5

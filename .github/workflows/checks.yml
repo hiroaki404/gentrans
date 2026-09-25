@@ -2,13 +2,13 @@ name: Checks and Test
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
 
 jobs:
   build-test-lint:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Configure Git
         run: |
@@ -20,21 +20,15 @@ jobs:
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
-          distribution: 'temurin'
+          distribution: temurin
+          java-version: "17"
 
-      - name: Cache Gradle dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
 
-      - name: Run build and ktlint check
-        run: ./gradlew assemble ktlintCheck
-
-      - name: Run tests
-        run: ./gradlew test
+      # The plugin needs local IDE installations, so CI builds and tests only core and CLI while linting every module.
+      - name: Build, test, and lint
+        run: >-
+          ./gradlew ktlintCheck :gentrans-core:ktlintCheck :gentrans-cli:ktlintCheck :gentrans-idea-plugin:ktlintCheck
+          :gentrans-core:assemble :gentrans-cli:assemble
+          :gentrans-core:test :gentrans-cli:test

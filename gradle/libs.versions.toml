@@ -8,7 +8,7 @@ koogGoogle = "1.2.0-beta"
 buildconfig = "5.6.7"
 slf4j = "2.0.17"
 kotest = "5.9.1"
-ktlint = "13.0.0"
+ktlint = "14.2.0"
 kotlinx-serialization = "1.10.0"
 jetbrainsMarkdown = "0.7.14"
 # Keep in sync with the hardcoded version in settings.gradle.kts's

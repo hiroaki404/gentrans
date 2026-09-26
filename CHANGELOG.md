@@ -29,5 +29,5 @@ and this project adheres to [Semantic Versioning 2.0.0](https://semver.org/spec/
 
 - Prevented kotlin-logging's startup message from being written to CLI standard output.
 
-[Unreleased]: https://github.com/hiroaki404/gentrans/compare/v0.4.0...HEAD
-[0.4.0]: https://github.com/hiroaki404/gentrans/releases/tag/v0.4.0
+[Unreleased]: https://github.com/hiroaki404/gentrans/compare/0.4.0...HEAD
+[0.4.0]: https://github.com/hiroaki404/gentrans/releases/tag/0.4.0

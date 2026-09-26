@@ -1,0 +1,7 @@
+Text before the HTML block.
+<<<CHUNK>>>
+<div class="note">
+  <p>Raw HTML content.</p>
+</div>
+<<<CHUNK>>>
+Text after the HTML block.

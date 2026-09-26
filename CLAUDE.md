@@ -28,7 +28,7 @@ Google, Anthropic, Meta, Alibaba, OpenRouter, Ollama) and follows clean architec
 ./gradlew installDist
 
 # Run from distribution
-./build/install/gentrans/bin/gentrans --version
+./gentrans-cli/build/install/gentrans/bin/gentrans --version
 ```
 
 ### Testing
@@ -59,9 +59,9 @@ Google, Anthropic, Meta, Alibaba, OpenRouter, Ollama) and follows clean architec
 
 The codebase follows **Clean Architecture** with clear separation of concerns:
 
-- **Presentation Layer**: `Main.kt` (Clikt-based CLI commands)
-- **Domain Layer**: `domain/` (Use cases for AI client and model configuration)
-- **Data Layer**: `data/` (Configuration data sources with priority hierarchy)
+- **Presentation Layer**: `gentrans-cli/` (`Main.kt`, Clikt-based CLI commands)
+- **Domain Layer**: `gentrans-core/domain/` (Use cases for AI client and model configuration)
+- **Data Layer**: `gentrans-core/data/` (Configuration data sources with priority hierarchy)
 - **Core Module**: `gentrans-core/` (Business logic separated from CLI)
 
 ### Configuration Priority System

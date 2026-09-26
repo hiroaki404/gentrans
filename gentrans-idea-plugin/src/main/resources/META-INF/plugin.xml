@@ -1,0 +1,30 @@
+<idea-plugin>
+    <id>io.github.hiroaki404.gentrans</id>
+    <name>GenTrans</name>
+    <vendor>hiroaki404</vendor>
+
+    <description><![CDATA[
+        AI-powered Markdown translation. Right-click a Markdown file and run "Translate Markdown"
+        to show the translation in the GenTrans tool window.
+    ]]></description>
+
+    <resource-bundle>messages.GentransBundle</resource-bundle>
+
+    <depends>com.intellij.modules.platform</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <applicationConfigurable
+            parentId="tools"
+            instance="io.github.hiroaki404.gentrans.plugin.settings.GentransConfigurable"
+            id="io.github.hiroaki404.gentrans.settings"/>
+        <toolWindow id="GenTrans" anchor="right"
+            factoryClass="io.github.hiroaki404.gentrans.plugin.translation.GentransToolWindowFactory"/>
+    </extensions>
+    <actions>
+        <action id="io.github.hiroaki404.gentrans.TranslateMarkdownAction"
+            class="io.github.hiroaki404.gentrans.plugin.translation.TranslateMarkdownAction">
+            <add-to-group group-id="EditorPopupMenu"/>
+            <add-to-group group-id="ProjectViewPopupMenu"/>
+        </action>
+    </actions>
+</idea-plugin>

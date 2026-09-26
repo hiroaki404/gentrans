@@ -1,0 +1,9 @@
+Intro before the table.
+<<<CHUNK>>>
+| Name | Value |
+|------|-------|
+| a    | 1     |
+| b    | 2     |
+| c    | 3     |
+<<<CHUNK>>>
+Outro after the table.

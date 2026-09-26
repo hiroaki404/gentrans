@@ -1,27 +1,42 @@
 [versions]
-appVersion = "0.3.1"
-kotlin = "2.2.0"
+gentrans = "0.4.0"
+kotlin = "2.3.10"
 shadow = "8.1.1"
 clikt = "5.0.3"
-koogAgents = "0.5.2"
+koogAgents = "1.2.0"
+koogGoogle = "1.2.0-beta"
 buildconfig = "5.6.7"
 slf4j = "2.0.17"
 kotest = "5.9.1"
 ktlint = "13.0.0"
-kotlinx-serialization = "1.8.1"
+kotlinx-serialization = "1.10.0"
+jetbrainsMarkdown = "0.7.14"
+# Keep in sync with the hardcoded version in settings.gradle.kts's
+# "org.jetbrains.intellij.platform.settings" plugin declaration.
+# Pinned to 2.11.0 (last release before the 2.12.0 Gradle 9.0.0 minimum bump); this repo's
+# wrapper is Gradle 8.13. 2.11.0 already supports intellijIdea()/androidStudio() unified
+# platform targeting, pluginVerification ides{select{}}, and runIde androidStudio registration.
+intellijPlatformGradlePlugin = "2.11.0"
 
 [libraries]
 kotlinGradlePlugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 clikt = { module = "com.github.ajalt.clikt:clikt", version.ref = "clikt" }
-koog-agents = { module = "ai.koog:koog-agents", version.ref = "koogAgents" }
+koog-agents-core = { module = "ai.koog:agents-core", version.ref = "koogAgents" }
+koog-client-openai = { module = "ai.koog:prompt-executor-openai-client", version.ref = "koogAgents" }
+koog-client-anthropic = { module = "ai.koog:prompt-executor-anthropic-client", version.ref = "koogAgents" }
+koog-client-ollama = { module = "ai.koog:prompt-executor-ollama-client", version.ref = "koogAgents" }
+koog-client-google = { module = "ai.koog:prompt-executor-google-client", version.ref = "koogGoogle" }
+koog-http-client-java = { module = "ai.koog:http-client-java", version.ref = "koogAgents" }
 koog-agents-test = { module = "ai.koog:agents-test", version.ref = "koogAgents" }
 koog-agents-features-opentelemetry = { module = "ai.koog:agents-features-opentelemetry", version.ref = "koogAgents" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
+slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 kotest-runner-junit5 = { module = "io.kotest:kotest-runner-junit5-jvm", version.ref = "kotest" }
 kotest-assertions-core = { module = "io.kotest:kotest-assertions-core-jvm", version.ref = "kotest" }
 kotlinx-serialization-core = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version.ref = "kotlinx-serialization" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
+jetbrains-markdown = { module = "org.jetbrains:markdown", version.ref = "jetbrainsMarkdown" }
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
@@ -29,3 +44,7 @@ shadow = { id = "com.github.johnrengelman.shadow", version.ref = "shadow" }
 buildconfig = { id = "com.github.gmazzo.buildconfig", version.ref = "buildconfig" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+# Not applied via alias(): gentrans-idea-plugin/build.gradle.kts applies
+# id("org.jetbrains.intellij.platform") without a version, because the
+# "org.jetbrains.intellij.platform.settings" plugin (settings.gradle.kts) already resolves this
+# plugin onto the root build classpath at this intellijPlatformGradlePlugin version.

@@ -1,0 +1,7 @@
+# Title
+<<<CHUNK>>>
+Intro line right after the heading, no blank line.
+<<<CHUNK>>>
+This is a longer paragraph that talks about several things in a row so that it grows past the limit on its own.
+<<<CHUNK>>>
+Short.

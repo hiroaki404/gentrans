@@ -1,0 +1,8 @@
+Short.
+<<<CHUNK>>>
+| Name | Value |
+|------|-------|
+| a    | 1     |
+| b    | 2     |
+<<<CHUNK>>>
+Short again.

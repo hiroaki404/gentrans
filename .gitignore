@@ -18,6 +18,10 @@ out/
 ### Kotlin ###
 .kotlin
 
+### Android Studio ###
+# Written by Android Studio on Gradle sync (machine-specific SDK path); must not be committed.
+local.properties
+
 ### IntelliJ Platform Gradle Plugin ###
 # Local cache/state for the intellij-platform-gradle-plugin (resolved platform artifacts,
 # coroutines debug javaagent, self-update lock) - machine-local, not project state.

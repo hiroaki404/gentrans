@@ -53,16 +53,16 @@ gentrans "hello"
 
 ```bash
 VERSION=X.Y.Z # Replace with the actual release version
-awk "/^## \\[$VERSION\\]/{release=1; next} release && /^## /{exit} release" CHANGELOG.md > "/tmp/gentrans-$VERSION-release-notes.md"
-git tag "v$VERSION"
-git push origin "v$VERSION"
-gh release create "v$VERSION" \
+awk "/^## \\[$VERSION\\]/{release=1; next} release && (/^## / || /^\[/){exit} release" CHANGELOG.md > "/tmp/gentrans-$VERSION-release-notes.md"
+git tag "$VERSION"
+git push origin "$VERSION"
+gh release create "$VERSION" \
   "gentrans-cli/build/distributions/gentrans-$VERSION.zip" \
   "gentrans-idea-plugin/build/distributions/gentrans-idea-plugin-$VERSION.zip" \
-  --title "v$VERSION" --notes-file "/tmp/gentrans-$VERSION-release-notes.md"
+  --title "$VERSION" --notes-file "/tmp/gentrans-$VERSION-release-notes.md"
 ```
 
-Before running `gh release create`, obtain explicit confirmation from the user. Attach only the standard CLI ZIP and the plugin ZIP.
+Tags and release names carry no `v` prefix (`0.4.0`), matching the earlier releases. Before running `gh release create`, obtain explicit confirmation from the user. Attach only the standard CLI ZIP and the plugin ZIP.
 
 ## 6. Prepare for the next development cycle
 

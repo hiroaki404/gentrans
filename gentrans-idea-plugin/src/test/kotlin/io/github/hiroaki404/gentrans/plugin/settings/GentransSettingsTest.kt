@@ -11,6 +11,7 @@ class GentransSettingsTest : BasePlatformTestCase() {
             nativeLanguage = "Japanese",
             secondLanguage = "English",
             ollamaBaseUrl = "http://localhost:12345",
+            cacheGeneration = 42,
         )
 
         val settings = GentransSettings()

@@ -22,6 +22,7 @@ import javax.swing.JPanel
 
 private class PanelCacheStore : TranslationCacheStore {
     val entries = mutableMapOf<VirtualFile, CachedTranslation>()
+    var generation = 7L
     var reads = 0
     var failPut = false
     var persist = true
@@ -30,7 +31,7 @@ private class PanelCacheStore : TranslationCacheStore {
     override fun get(file: VirtualFile): CachedTranslation? {
         reads++
         lastReadOnEdt = ApplicationManager.getApplication().isDispatchThread
-        return entries[file]
+        return entries[file]?.takeIf { it.generation == generation }
     }
 
     override fun put(file: VirtualFile, entry: CachedTranslation) {
@@ -38,9 +39,12 @@ private class PanelCacheStore : TranslationCacheStore {
         if (persist) entries[file] = entry
     }
 
-    override fun clearAll() = entries.clear()
+    override fun clearAll() {
+        generation++
+        entries.clear()
+    }
 
-    override fun currentGeneration(): Long = 7
+    override fun currentGeneration(): Long = generation
 }
 
 private class PanelPreview : TranslationPreview {
@@ -205,6 +209,45 @@ class GentransToolWindowPanelTest : BasePlatformTestCase() {
         assertTrue(store.reads > 0)
         assertEquals("Hello World!", preview.markdown)
         assertEquals("Hello World!", panel.displayedTranslationText)
+    }
+
+    fun testCacheClearRemovesCompletedFallbackAndShowsUntranslated() {
+        val file = file("cleared.md", "source")
+        val store = PanelCacheStore().apply { persist = false }
+        val preview = PanelPreview()
+        val panel = panel(store, preview, service())
+
+        panel.startTranslation(file, "source", "source", false)
+        PlatformTestUtil.waitWhileBusy { panel.displayedTranslationText != "Hello World!" }
+        panel.refreshDisplayed()
+        assertEquals("Hello World!", preview.markdown)
+
+        store.clearAll()
+        panel.onCacheCleared()
+
+        assertNull(panel.displayedTranslationText)
+        assertEquals(GentransBundle.message("gentrans.preview.untranslated"), preview.message)
+    }
+
+    fun testCacheClearKeepsInFlightTranslationAndStoresItInNewGeneration() {
+        val file = file("in-flight.md", "source")
+        val store = PanelCacheStore()
+        val preview = PanelPreview()
+        val entered = CompletableDeferred<Unit>()
+        val gate = CompletableDeferred<Unit>()
+        val panel = panel(store, preview, service(ScriptedPromptExecutor(entered, gate, gateAtCallIndex = 1)))
+
+        panel.startTranslation(file, "source", "source", false)
+        PlatformTestUtil.waitWhileBusy { !entered.isCompleted }
+        store.clearAll()
+        panel.onCacheCleared()
+        assertEquals(GentransBundle.message("gentrans.preview.translating"), preview.message)
+
+        gate.complete(Unit)
+        PlatformTestUtil.waitWhileBusy { store.entries[file] == null }
+
+        assertEquals(8L, store.entries[file]?.generation)
+        assertEquals("Hello World!", preview.markdown)
     }
 
     fun testCompletedTranslationWithoutSourceFileRemainsAvailableForCopy() {

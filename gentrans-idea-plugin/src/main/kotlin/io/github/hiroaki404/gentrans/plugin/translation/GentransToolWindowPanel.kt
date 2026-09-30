@@ -151,6 +151,12 @@ internal class GentransToolWindowPanel @JvmOverloads constructor(
         }
     }
 
+    fun onCacheCleared() {
+        lastCompleted = null
+        displayedTranslation = null
+        refreshDisplayed()
+    }
+
     internal fun cancelTranslation() {
         val translation = inFlight ?: return
         inFlight = null

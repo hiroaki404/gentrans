@@ -42,6 +42,20 @@ class JBHtmlPaneTranslationPreviewTest : BasePlatformTestCase() {
         }
     }
 
+    fun testRenderEscapesNoticeAboveMarkdown() {
+        val preview = JBHtmlPaneTranslationPreview()
+        try {
+            preview.render("# Hello", "Old <source> & translation")
+            PlatformTestUtil.waitWhileBusy { !preview.isShowingPreview() }
+
+            val html = preview.renderedHtml()
+            assertTrue(html.contains("Old &lt;source&gt; &amp; translation"))
+            assertTrue(html.indexOf("Old &lt;source&gt;") < html.indexOf("Hello"))
+        } finally {
+            Disposer.dispose(preview)
+        }
+    }
+
     fun testShowMessageSwitchesBackToTheMessageCard() {
         val preview = JBHtmlPaneTranslationPreview()
         try {

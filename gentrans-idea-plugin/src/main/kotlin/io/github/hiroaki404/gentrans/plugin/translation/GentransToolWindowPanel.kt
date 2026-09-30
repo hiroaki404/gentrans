@@ -5,9 +5,16 @@ import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DefaultActionGroup
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runWriteAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
+import com.intellij.openapi.diagnostic.Logger
+import com.intellij.openapi.fileEditor.FileDocumentManager
+import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.fileEditor.FileEditorManagerEvent
+import com.intellij.openapi.fileEditor.FileEditorManagerListener
+import com.intellij.openapi.fileTypes.FileTypeRegistry
 import com.intellij.openapi.ide.CopyPasteManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
@@ -20,20 +27,36 @@ import io.github.hiroaki404.gentrans.plugin.preview.JBHtmlPaneTranslationPreview
 import io.github.hiroaki404.gentrans.plugin.preview.TranslationPreview
 import java.awt.datatransfer.StringSelection
 import java.nio.charset.StandardCharsets
+import java.util.concurrent.Executor
 import javax.swing.JComponent
 
 @Service(Service.Level.PROJECT)
-internal class GentransToolWindowPanel(
+internal class GentransToolWindowPanel @JvmOverloads constructor(
     private val project: Project,
+    private val store: TranslationCacheStore = FileAttributeTranslationCacheStore.getInstance(),
+    private val preview: TranslationPreview = JBHtmlPaneTranslationPreview(),
+    private val translationService: TranslationService = TranslationService.getInstance(project),
+    private val cacheExecutor: Executor = Executor { ApplicationManager.getApplication().executeOnPooledThread(it) },
 ) : Disposable {
-    private val preview: TranslationPreview = JBHtmlPaneTranslationPreview()
+    private class InFlight(
+        val file: VirtualFile?,
+        val fileHash: String,
+        val sourceHash: String,
+        val isSelection: Boolean,
+        var targetLanguage: String? = null,
+        var partialText: String = "",
+        var origin: TranslationOrigin? = null,
+    )
+
     private val panel = SimpleToolWindowPanel(true, true)
-    private var sourceFile: VirtualFile? = null
-    private var targetLanguage: String? = null
-    private var translatedText = ""
-    private var lastSourceText: String? = null
+    private var inFlight: InFlight? = null
+    private var displayedFile: VirtualFile? = null
+    private var displayedTranslation: CachedTranslation? = null
+    private var lastCompleted: Pair<VirtualFile?, CachedTranslation>? = null
+    private var displayRequest = 0L
 
     val component: JComponent = panel
+    internal val displayedTranslationText: String? get() = displayedTranslation?.translatedText
 
     init {
         Disposer.register(this, preview)
@@ -43,36 +66,153 @@ internal class GentransToolWindowPanel(
             true,
         ).component
         panel.setContent(preview.component)
-    }
-
-    fun startTranslation(sourceFile: VirtualFile?, text: String) {
-        this.sourceFile = sourceFile
-        targetLanguage = null
-        translatedText = ""
-        lastSourceText = text
-        preview.showMessage(GentransBundle.message("gentrans.preview.translating"))
-        TranslationService.getInstance(project).translate(text, ::handleEvent, ::handleFailure)
-    }
-
-    private fun handleEvent(event: TranslationEvent) {
-        when (event) {
-            is TranslationEvent.SourceLanguageDetected -> if (translatedText.isEmpty()) {
-                preview.showMessage(GentransBundle.message("gentrans.preview.translating"))
+        project.messageBus.connect(this).subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, object : FileEditorManagerListener {
+            override fun selectionChanged(event: FileEditorManagerEvent) {
+                val file = event.newFile ?: return
+                if (isMarkdownFileType(FileTypeRegistry.getInstance().getFileTypeByFile(file))) selectFile(file)
             }
-            is TranslationEvent.TargetLanguageDecided -> targetLanguage = event.language
+        })
+        FileEditorManager.getInstance(project).currentFile?.let { file ->
+            if (isMarkdownFileType(FileTypeRegistry.getInstance().getFileTypeByFile(file))) selectFile(file)
+        }
+    }
+
+    fun startTranslation(sourceFile: VirtualFile?, text: String, wholeFileText: String, isSelection: Boolean) {
+        val translation = InFlight(sourceFile, sha256(wholeFileText), sha256(text), isSelection)
+        inFlight = translation
+        displayedFile = sourceFile
+        displayedTranslation = null
+        lastCompleted = null
+        displayRequest++
+        preview.showMessage(GentransBundle.message("gentrans.preview.translating"))
+        translationService.translate(
+            text,
+            onEvent = { event -> handleEvent(translation, event) },
+            onFailure = { failure -> handleFailure(translation, failure) },
+            onCompletedOrigin = { origin -> translation.origin = origin },
+        )
+    }
+
+    internal fun selectFile(file: VirtualFile) {
+        if (displayedFile != file) lastCompleted = null
+        displayedFile = file
+        displayedTranslation = null
+        displayRequest++
+        val translation = inFlight
+        if (translation?.file == file) {
+            showInFlight(translation)
+        } else {
+            refreshDisplayed()
+        }
+    }
+
+    fun refreshDisplayed() {
+        val file = displayedFile ?: return
+        val translation = inFlight
+        if (translation?.file == file) showInFlight(translation)
+        val request = ++displayRequest
+        displayedTranslation = lastCompleted?.takeIf { it.first == file }?.second
+        cacheExecutor.execute {
+            val entry = try {
+                store.get(file)
+            } catch (error: Exception) {
+                LOG.warn("Failed to read translation cache for ${file.path}", error)
+                null
+            }
+            val fileText = try {
+                String(file.contentsToByteArray(), StandardCharsets.UTF_8)
+            } catch (error: Exception) {
+                LOG.warn("Failed to read source file for ${file.path}", error)
+                ""
+            }
+            val display = {
+                if (!project.isDisposed && displayedFile == file && displayRequest == request) {
+                    val currentTranslation = inFlight
+                    if (currentTranslation?.file == file) {
+                        showInFlight(currentTranslation)
+                    } else {
+                        val shownEntry = entry ?: lastCompleted?.takeIf { it.first == file }?.second
+                        displayedTranslation = shownEntry
+                        if (shownEntry == null) {
+                            preview.showMessage(GentransBundle.message("gentrans.preview.untranslated"))
+                        } else {
+                            val currentText = FileDocumentManager.getInstance().getDocument(file)?.text ?: fileText
+                            val notices = listOfNotNull(
+                                GentransBundle.message("gentrans.preview.staleNotice").takeIf { shownEntry.isStale(currentText) },
+                                GentransBundle.message("gentrans.preview.selectionNotice").takeIf { shownEntry.isSelection },
+                            )
+                            preview.render(shownEntry.translatedText, notices.takeIf { it.isNotEmpty() }?.joinToString("\n"))
+                        }
+                    }
+                }
+            }
+            if (ApplicationManager.getApplication().isDispatchThread) display()
+            else ApplicationManager.getApplication().invokeLater { display() }
+        }
+    }
+
+    internal fun cancelTranslation() {
+        val translation = inFlight ?: return
+        inFlight = null
+        translationService.cancel()
+        if (displayedFile == translation.file) refreshDisplayed()
+    }
+
+    private fun showInFlight(translation: InFlight) {
+        if (translation.partialText.isEmpty()) preview.showMessage(GentransBundle.message("gentrans.preview.translating"))
+        else preview.render(translation.partialText)
+    }
+
+    private fun handleEvent(translation: InFlight, event: TranslationEvent) {
+        if (inFlight !== translation) return
+        when (event) {
+            is TranslationEvent.SourceLanguageDetected -> Unit
+            is TranslationEvent.TargetLanguageDecided -> translation.targetLanguage = event.language
             is TranslationEvent.ChunkTranslated -> {
-                translatedText = event.translatedTextSoFar
-                preview.render(translatedText)
+                translation.partialText = event.translatedTextSoFar
+                if (displayedFile == translation.file) preview.render(translation.partialText)
             }
             is TranslationEvent.Completed -> {
-                translatedText = event.text
-                preview.render(translatedText)
+                inFlight = null
+                val origin = translation.origin
+                val generation = try {
+                    store.currentGeneration()
+                } catch (error: Exception) {
+                    LOG.warn("Failed to prepare translation cache entry", error)
+                    null
+                }
+                val entry = CachedTranslation(
+                    fileHash = translation.fileHash,
+                    sourceHash = translation.sourceHash,
+                    isSelection = translation.isSelection,
+                    targetLanguage = translation.targetLanguage.orEmpty(),
+                    provider = origin?.provider.orEmpty(),
+                    model = origin?.model.orEmpty(),
+                    translatedText = event.text,
+                    generation = generation ?: 0L,
+                )
+                if (generation != null && translation.file != null) {
+                    try {
+                        store.put(translation.file, entry)
+                    } catch (error: Exception) {
+                        LOG.warn("Failed to store translation cache for ${translation.file.path}", error)
+                    }
+                }
+                if (displayedFile == translation.file) {
+                    displayRequest++
+                    displayedTranslation = entry
+                    lastCompleted = translation.file to entry
+                    preview.render(event.text)
+                }
             }
             is TranslationEvent.Summarized -> Unit
         }
     }
 
-    private fun handleFailure(failure: TranslationFailure) {
+    private fun handleFailure(translation: InFlight, failure: TranslationFailure) {
+        if (inFlight !== translation) return
+        inFlight = null
+        if (displayedFile != translation.file) return
         val message = when (failure) {
             is TranslationFailure.ApiKeyMissing -> GentransBundle.message("gentrans.failure.apiKeyMissing", failure.provider.key)
             is TranslationFailure.Generic -> GentransBundle.message("gentrans.failure.generic", failure.message)
@@ -82,22 +222,22 @@ internal class GentransToolWindowPanel(
 
     private inner class CopyAction : AnAction(GentransBundle.message("gentrans.toolbar.copy")) {
         override fun actionPerformed(event: AnActionEvent) {
-            CopyPasteManager.getInstance().setContents(StringSelection(translatedText))
+            displayedTranslationText?.let { CopyPasteManager.getInstance().setContents(StringSelection(it)) }
         }
     }
 
     private inner class SaveAction : AnAction(GentransBundle.message("gentrans.toolbar.saveAs")) {
         override fun actionPerformed(event: AnActionEvent) {
-            val source = sourceFile ?: return
-            val language = targetLanguage ?: return
+            val source = displayedFile ?: return
+            val translation = displayedTranslation ?: return
             val parent = source.parent ?: return
-            val name = "${source.nameWithoutExtension}.${language.lowercase().replace(Regex("\\s+"), "-")}.md"
+            val name = "${source.nameWithoutExtension}.${translation.targetLanguage.lowercase().replace(Regex("\\s+"), "-")}.md"
             val existing = parent.findChild(name)
             if (existing != null && Messages.showYesNoDialog(project, GentransBundle.message("gentrans.save.overwrite.message", name), GentransBundle.message("gentrans.save.overwrite.title"), null) != Messages.YES) return
             try {
                 runWriteAction {
                     val file = existing ?: parent.createChildData(this, name)
-                    file.setBinaryContent(translatedText.toByteArray(StandardCharsets.UTF_8))
+                    file.setBinaryContent(translation.translatedText.toByteArray(StandardCharsets.UTF_8))
                 }
             } catch (error: Exception) {
                 preview.showMessage(GentransBundle.message("gentrans.save.error", error.message ?: error.javaClass.simpleName))
@@ -106,18 +246,23 @@ internal class GentransToolWindowPanel(
     }
 
     private inner class CancelAction : AnAction(GentransBundle.message("gentrans.toolbar.cancel")) {
-        override fun actionPerformed(event: AnActionEvent) = TranslationService.getInstance(project).cancel()
+        override fun actionPerformed(event: AnActionEvent) = cancelTranslation()
     }
 
     private inner class RerunAction : AnAction(GentransBundle.message("gentrans.toolbar.rerun")) {
         override fun actionPerformed(event: AnActionEvent) {
-            lastSourceText?.let { startTranslation(sourceFile, it) }
+            val file = displayedFile ?: return
+            val text = FileDocumentManager.getInstance().getDocument(file)?.text
+                ?: String(file.contentsToByteArray(), StandardCharsets.UTF_8)
+            startTranslation(file, text, text, false)
         }
     }
 
     override fun dispose() = Unit
 
     companion object {
+        private val LOG = Logger.getInstance(GentransToolWindowPanel::class.java)
+
         fun getInstance(project: Project): GentransToolWindowPanel = project.service()
     }
 }

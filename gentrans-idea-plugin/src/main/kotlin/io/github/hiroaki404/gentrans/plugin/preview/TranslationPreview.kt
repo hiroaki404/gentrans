@@ -5,6 +5,6 @@ import javax.swing.JComponent
 
 internal interface TranslationPreview : Disposable {
     val component: JComponent
-    fun render(markdown: String)
+    fun render(markdown: String, notice: String? = null)
     fun showMessage(message: String)
 }

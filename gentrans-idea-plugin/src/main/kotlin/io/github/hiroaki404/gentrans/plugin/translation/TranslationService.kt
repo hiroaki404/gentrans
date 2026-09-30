@@ -32,6 +32,8 @@ internal sealed interface TranslationFailure {
     data class Generic(val message: String) : TranslationFailure
 }
 
+internal data class TranslationOrigin(val provider: String, val model: String)
+
 @Service(Service.Level.PROJECT)
 internal class TranslationService @JvmOverloads constructor(
     private val project: Project,
@@ -46,6 +48,7 @@ internal class TranslationService @JvmOverloads constructor(
         text: String,
         onEvent: (TranslationEvent) -> Unit,
         onFailure: (TranslationFailure) -> Unit,
+        onCompletedOrigin: (TranslationOrigin) -> Unit = {},
     ) {
         currentJob?.cancel()
         val currentGeneration = generation.incrementAndGet()
@@ -69,7 +72,17 @@ internal class TranslationService @JvmOverloads constructor(
                                 else -> Unit
                             }
                             if (generation.get() == currentGeneration) {
-                                withContext(Dispatchers.EDT) { onEvent(event) }
+                                withContext(Dispatchers.EDT) {
+                                    if (generation.get() == currentGeneration) {
+                                        if (event is TranslationEvent.Completed) {
+                                            onCompletedOrigin(TranslationOrigin(
+                                                resolved.translatorConfig.provider.key,
+                                                resolved.translatorConfig.model,
+                                            ))
+                                        }
+                                        onEvent(event)
+                                    }
+                                }
                             }
                         }
                     }

@@ -27,7 +27,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 
-private class FakeApiKeyStore(private val key: String? = "dummy") : ApiKeyStore {
+internal class FakeApiKeyStore(private val key: String? = "dummy") : ApiKeyStore {
     override fun get(provider: Provider): String? = key
 
     override fun set(provider: Provider, apiKey: String?) = Unit
@@ -40,7 +40,7 @@ private class FakeApiKeyStore(private val key: String? = "dummy") : ApiKeyStore 
  * [entered], letting tests observe "the strategy graph has reached this LLM call" before it's
  * allowed to proceed - or never allowed to, if cancelled first.
  */
-private class ScriptedPromptExecutor(
+internal class ScriptedPromptExecutor(
     private val entered: CompletableDeferred<Unit>? = null,
     private val gate: CompletableDeferred<Unit>? = null,
     private val gateAtCallIndex: Int = -1,
@@ -92,13 +92,18 @@ class TranslationServiceTest : BasePlatformTestCase() {
     fun testEventsArriveInOrder() {
         val scope = newScope()
         try {
+            var usedConfig: TranslatorConfig? = null
             val service = TranslationService(
                 project,
                 scope,
-                translatorFactory = { createTranslator(config, executorFactory = { ScriptedPromptExecutor() }) },
+                translatorFactory = {
+                    usedConfig = it
+                    createTranslator(config, executorFactory = { ScriptedPromptExecutor() })
+                },
                 apiKeyStore = FakeApiKeyStore(),
             )
             val events = mutableListOf<TranslationEvent>()
+            val origins = mutableListOf<TranslationOrigin>()
             val completed = CompletableDeferred<Unit>()
 
             service.translate(
@@ -108,6 +113,7 @@ class TranslationServiceTest : BasePlatformTestCase() {
                     if (it is TranslationEvent.Completed) completed.complete(Unit)
                 },
                 onFailure = { fail("unexpected failure: $it") },
+                onCompletedOrigin = { origins += it },
             )
             runBlocking { withTimeout(15_000) { completed.await() } }
 
@@ -125,6 +131,7 @@ class TranslationServiceTest : BasePlatformTestCase() {
                 ),
                 events,
             )
+            assertEquals(listOf(TranslationOrigin(usedConfig!!.provider.key, usedConfig!!.model)), origins)
         } finally {
             scope.cancel()
         }
@@ -193,7 +200,13 @@ class TranslationServiceTest : BasePlatformTestCase() {
             )
 
             val events = mutableListOf<TranslationEvent>()
-            service.translate("hello", onEvent = { events += it }, onFailure = { fail("unexpected failure: $it") })
+            val origins = mutableListOf<TranslationOrigin>()
+            service.translate(
+                "hello",
+                onEvent = { events += it },
+                onFailure = { fail("unexpected failure: $it") },
+                onCompletedOrigin = { origins += it },
+            )
             runBlocking { withTimeout(15_000) { entered.await() } }
 
             service.cancel()
@@ -202,6 +215,7 @@ class TranslationServiceTest : BasePlatformTestCase() {
             runBlocking { delay(500) }
 
             assertEquals(listOf(TranslationEvent.SourceLanguageDetected(language = "Japanese", totalChunks = 1)), events)
+            assertTrue(origins.isEmpty())
         } finally {
             scope.cancel()
         }

@@ -52,10 +52,12 @@ private class PanelPreview : TranslationPreview {
     var markdown: String? = null
     var notice: String? = null
     var message: String? = null
+    val renderedNotices = mutableListOf<String?>()
 
     override fun render(markdown: String, notice: String?) {
         this.markdown = markdown
         this.notice = notice
+        renderedNotices += notice
         message = null
     }
 
@@ -114,6 +116,25 @@ class GentransToolWindowPanelTest : BasePlatformTestCase() {
             store.entries[file],
         )
         assertEquals("Hello World!", preview.markdown)
+        PlatformTestUtil.waitWhileBusy { preview.renderedNotices.size < 2 }
+        assertEquals(
+            listOf(
+                GentransBundle.message("gentrans.preview.selectionNotice"),
+                GentransBundle.message("gentrans.preview.selectionNotice"),
+            ),
+            preview.renderedNotices,
+        )
+    }
+
+    fun testWholeFileTranslationRendersWithoutNotice() {
+        val file = file("whole.md", "whole file")
+        val preview = PanelPreview()
+        val panel = panel(PanelCacheStore(), preview, service())
+
+        panel.startTranslation(file, "whole file", "whole file", false)
+        PlatformTestUtil.waitWhileBusy { preview.renderedNotices.size < 2 }
+
+        assertEquals(listOf(null, null), preview.renderedNotices)
     }
 
     fun testSelectionRendersCachedTranslationNoticesAndUntranslatedMessage() {

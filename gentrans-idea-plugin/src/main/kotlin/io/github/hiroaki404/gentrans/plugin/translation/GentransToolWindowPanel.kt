@@ -137,11 +137,7 @@ internal class GentransToolWindowPanel @JvmOverloads constructor(
                             preview.showMessage(GentransBundle.message("gentrans.preview.untranslated"))
                         } else {
                             val currentText = FileDocumentManager.getInstance().getDocument(file)?.text ?: fileText
-                            val notices = listOfNotNull(
-                                GentransBundle.message("gentrans.preview.staleNotice").takeIf { shownEntry.isStale(currentText) },
-                                GentransBundle.message("gentrans.preview.selectionNotice").takeIf { shownEntry.isSelection },
-                            )
-                            preview.render(shownEntry.translatedText, notices.takeIf { it.isNotEmpty() }?.joinToString("\n"))
+                            preview.render(shownEntry.translatedText, translationNotice(shownEntry.isSelection, shownEntry.isStale(currentText)))
                         }
                     }
                 }
@@ -166,8 +162,14 @@ internal class GentransToolWindowPanel @JvmOverloads constructor(
 
     private fun showInFlight(translation: InFlight) {
         if (translation.partialText.isEmpty()) preview.showMessage(GentransBundle.message("gentrans.preview.translating"))
-        else preview.render(translation.partialText)
+        else preview.render(translation.partialText, translationNotice(translation.isSelection))
     }
+
+    private fun translationNotice(isSelection: Boolean, isStale: Boolean = false): String? =
+        listOfNotNull(
+            GentransBundle.message("gentrans.preview.staleNotice").takeIf { isStale },
+            GentransBundle.message("gentrans.preview.selectionNotice").takeIf { isSelection },
+        ).takeIf { it.isNotEmpty() }?.joinToString("\n")
 
     private fun handleEvent(translation: InFlight, event: TranslationEvent) {
         if (inFlight !== translation) return
@@ -176,7 +178,7 @@ internal class GentransToolWindowPanel @JvmOverloads constructor(
             is TranslationEvent.TargetLanguageDecided -> translation.targetLanguage = event.language
             is TranslationEvent.ChunkTranslated -> {
                 translation.partialText = event.translatedTextSoFar
-                if (displayedFile == translation.file) preview.render(translation.partialText)
+                if (displayedFile == translation.file) preview.render(translation.partialText, translationNotice(translation.isSelection))
             }
             is TranslationEvent.Completed -> {
                 inFlight = null
@@ -208,7 +210,7 @@ internal class GentransToolWindowPanel @JvmOverloads constructor(
                     displayRequest++
                     displayedTranslation = entry
                     lastCompleted = translation.file to entry
-                    preview.render(event.text)
+                    preview.render(event.text, translationNotice(translation.isSelection))
                 }
             }
             is TranslationEvent.Summarized -> Unit

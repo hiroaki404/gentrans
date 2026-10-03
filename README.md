@@ -43,7 +43,9 @@
 
 - **Markdown Translation Preview** - **Translate Markdown** opens the **GenTrans** tool window and renders translated chunks progressively.
 - **Selection or Document Translation** - In an editor, a non-empty selection is translated; otherwise the whole editor document is translated. From the Project View, the whole file is translated, including unsaved changes if it is open in an editor.
-- **Preview Toolbar** - **Copy**, **Save as**, **Cancel**, and **Re-run**.
+- **Preview Toolbar** - **Copy**, **Save as**, **Cancel**, and **Re-run**. They act on the file whose translation is shown. **Copy** and **Save as** are available once a translation has completed. **Re-run** translates the whole current text of that file again, even if the previous run translated a selection.
+- **Saved Translations** - The latest completed translation of each file is saved and shown again when you switch back to that file, including after restarting the IDE. A notice is shown when the source file has changed since the translation, and when the translation covers only a selection.
+- **Concurrent Translations** - Different files can be translated at the same time, up to three. Switching files does not cancel a running translation; its result is saved when it completes. Starting a fourth shows a message instead.
 - **Long-text Confirmation** - A confirmation dialog is shown at five or more chunks.
 - **Protected Markdown** - In Markdown mode, YAML front matter at the very start of the translated text and fenced code blocks are replaced with placeholders and restored locally. Indented code blocks, HTML, inline code, URLs, and image paths are sent as-is.
 
@@ -62,13 +64,13 @@ The plugin is distributed through GitHub Releases only and is not published on t
 
 ## 🔧 Plugin Settings
 
-Open **Settings > Tools > GenTrans** to configure Provider, Model, API key, Target language, Native language, Second language, and Ollama base URL.
+Open **Settings > Tools > GenTrans** to configure Provider, Model, API key, Target language, Native language, Second language, and Ollama base URL. The **Clear translation cache** button on the same page removes all saved translations immediately; it does not need **Apply**.
 
 The defaults are provider **OpenAI**, model `gpt-4o-mini`, native language **Japanese**, and second language **English**. The API key field is disabled for Ollama, and the Ollama base URL is shown only when Ollama is selected.
 
 The first release offers **OpenAI**, **Google**, **Anthropic**, and **Ollama**. Google uses Koog's beta client (`1.2.0-beta`), so its behavior may change between releases.
 
-API keys are stored through the IDE PasswordSafe under a provider-specific GenTrans service name. The persistent plugin settings state stores the other fields in `gentrans.xml`; it has no API-key field.
+API keys are stored through the IDE PasswordSafe under a provider-specific GenTrans service name. The persistent plugin settings state stores the other fields in `gentrans.xml`; it has no API-key field. It also stores a counter that invalidates saved translations when the cache is cleared.
 
 ## 🚀 Plugin Usage
 
@@ -76,8 +78,8 @@ Your text is sent to the configured AI provider — see [Data Privacy](#-data-pr
 
 1. Set the provider, model, API key, and language settings in **Settings > Tools > GenTrans**.
 2. Right-click a Markdown file in an editor or in the Project View, and select **Translate Markdown**.
-3. Review the result in the **GenTrans** tool window as chunks arrive.
-4. Use **Copy** or **Save as**. Save as creates `<nameWithoutExtension>.<target-language>.md` beside the source. It uses the model's normalized English target-language name, lowercased with whitespace replaced by hyphens; for example, `README.japanese.md`, even when the setting was `ja`. It asks before overwriting an existing file. If target-language decision has not completed, Save as does nothing. For a selection translation, it saves only the translated selection.
+3. Review the result in the **GenTrans** tool window as chunks arrive. Switching to another Markdown file shows that file's saved translation, or a message if it has not been translated.
+4. Use **Copy** or **Save as**. Save as creates `<nameWithoutExtension>.<target-language>.md` beside the source. It uses the model's normalized English target-language name, lowercased with whitespace replaced by hyphens; for example, `README.japanese.md`, even when the setting was `ja`. It asks before overwriting an existing file. Copy and Save as do nothing until the translation has completed. For a selection translation, it saves only the translated selection.
 
 ## ❗ Plugin Limitations
 
@@ -86,6 +88,9 @@ Your text is sent to the configured AI provider — see [Data Privacy](#-data-pr
 - The plugin has no summary-specific or comment-translation workflow. Selection translation is supported.
 - The plugin has no proxy settings and its UI is English only.
 - The target language comes from settings. Leaving it empty uses the configured native and second languages to decide the target language.
+- Only the latest translation of each file is saved. Translating a selection replaces that file's saved translation.
+- Saved translations are kept in the IDE's file cache and can be lost when the IDE rebuilds its caches, for example with **Invalidate Caches**. Files without a persistent virtual-file ID, such as in-memory files, are not saved; their result is only kept while it is shown.
+- At most three translations run at the same time.
 - Requires the IDE's bundled Markdown plugin to be enabled.
 
 ---
@@ -302,6 +307,7 @@ The plugin ZIP is written to `gentrans-idea-plugin/build/distributions/`. The pl
 - The Ollama CLI uses the fixed URL `http://localhost:11434`. The plugin uses that URL when its Ollama base URL is empty. Depending on the Ollama setup, for example a cloud-hosted model, input can leave the machine; setting the plugin URL to another host sends input there.
 - gentrans does not collect analytics or usage telemetry. In CLI debug builds only (`:gentrans-cli:run` or `-Pdebug=true`), `--trace` enables OpenTelemetry with the Langfuse exporter in verbose mode and sends full prompts and responses, including input text, to the configured Langfuse host. It requires `LANGFUSE_PUBLIC_KEY` and `LANGFUSE_SECRET_KEY`; the host is selected from `LANGFUSE_HOST`, then `LANGFUSE_BASE_URL`, then `https://cloud.langfuse.com`. Release builds ignore `--trace`, and the plugin has no tracing.
 - API keys are supplied only to the selected provider's client. The plugin stores them in IDE PasswordSafe; CLI keys may be passed as a command-line option or environment variable.
+- The plugin saves each completed translation in the IDE's local file cache so it can be shown again. Nothing is sent anywhere for this; use **Clear translation cache** in Settings to remove saved translations.
 - For confidential documents, review the selected provider's terms and data-handling policy before use. Providers differ in how they handle API inputs, including whether inputs are used for training.
 
 ## 🤝 Contributing

@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning 2.0.0](https://semver.org/spec/
 
 ## [Unreleased]
 
+### Added
+
+- Added per-file saved translations to the plugin. The latest completed translation of each file is shown again when you switch back to it, including after restarting the IDE.
+- Added notices in the preview when the source file has changed since the translation, and when the translation covers only a selection. The changed-source notice updates about one second after you stop editing.
+- Added concurrent translations of different files, up to three at the same time. Switching files no longer cancels a running translation.
+- Added a **Clear translation cache** button to **Settings > Tools > GenTrans**.
+
+### Changed
+
+- **Copy** and **Save as** are available once a translation has completed, and act on the file whose translation is shown. Copying partial text during a translation is no longer possible.
+- **Re-run** translates the whole current text of the displayed file, even if the previous run translated a selection.
+- **Cancel** stops only the translation of the displayed file.
+
 ## [0.4.0] - 2026-09-26
 
 ### Added

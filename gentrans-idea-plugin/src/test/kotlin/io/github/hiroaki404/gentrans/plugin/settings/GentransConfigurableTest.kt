@@ -1,7 +1,7 @@
 package io.github.hiroaki404.gentrans.plugin.settings
 
-import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import io.github.hiroaki404.gentrans.plugin.GentransBundle
 import io.github.hiroaki404.gentrans.plugin.translation.CachedTranslation
 import io.github.hiroaki404.gentrans.plugin.translation.TranslationCacheStore
@@ -57,9 +57,11 @@ class GentransConfigurableTest : BasePlatformTestCase() {
 
         assertEquals(1, store.clearCount)
         assertFalse(configurable.isModified())
-        assertTrue(findComponent<JLabel>(component) {
-            it.text == GentransBundle.message("gentrans.settings.cacheCleared")
-        }.isVisible)
+        assertTrue(
+            findComponent<JLabel>(component) {
+                it.text == GentransBundle.message("gentrans.settings.cacheCleared")
+            }.isVisible
+        )
     }
 
     fun testApplyAndResetPreserveCacheGeneration() {
@@ -111,7 +113,9 @@ class GentransConfigurableTest : BasePlatformTestCase() {
 
         override fun get(file: VirtualFile): CachedTranslation? = null
         override fun put(file: VirtualFile, entry: CachedTranslation) = Unit
-        override fun clearAll() { clearCount++ }
+        override fun clearAll() {
+            clearCount++
+        }
         override fun currentGeneration(): Long = 0
     }
 }

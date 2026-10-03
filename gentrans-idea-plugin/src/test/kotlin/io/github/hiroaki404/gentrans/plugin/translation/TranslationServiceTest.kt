@@ -163,12 +163,24 @@ class TranslationServiceTest : BasePlatformTestCase() {
 
             val eventsA = mutableListOf<TranslationEvent>()
             val eventsB = mutableListOf<TranslationEvent>()
+            val sourceLanguageDetectedA = CompletableDeferred<Unit>()
             val completedB = CompletableDeferred<Unit>()
             val completedOther = CompletableDeferred<Unit>()
             val key = TranslationKey.Detached()
 
-            service.translate(key, "first", onEvent = { eventsA += it }, onFailure = { fail("unexpected failure: $it") })
+            service.translate(
+                key,
+                "first",
+                onEvent = {
+                    eventsA += it
+                    if (it is TranslationEvent.SourceLanguageDetected) {
+                        sourceLanguageDetectedA.complete(Unit)
+                    }
+                },
+                onFailure = { fail("unexpected failure: $it") },
+            )
             runBlocking { withTimeout(15_000) { entered.await() } }
+            runBlocking { withTimeout(15_000) { sourceLanguageDetectedA.await() } }
             service.translate(TranslationKey.Detached(), "other", onEvent = {
                 if (it is TranslationEvent.Completed) completedOther.complete(Unit)
             }, onFailure = { fail("unexpected failure: $it") })
@@ -214,15 +226,22 @@ class TranslationServiceTest : BasePlatformTestCase() {
 
             val events = mutableListOf<TranslationEvent>()
             val origins = mutableListOf<TranslationOrigin>()
+            val sourceLanguageDetected = CompletableDeferred<Unit>()
             val key = TranslationKey.Detached()
             service.translate(
                 key,
                 "hello",
-                onEvent = { events += it },
+                onEvent = {
+                    events += it
+                    if (it is TranslationEvent.SourceLanguageDetected) {
+                        sourceLanguageDetected.complete(Unit)
+                    }
+                },
                 onFailure = { fail("unexpected failure: $it") },
                 onCompletedOrigin = { origins += it },
             )
             runBlocking { withTimeout(15_000) { entered.await() } }
+            runBlocking { withTimeout(15_000) { sourceLanguageDetected.await() } }
 
             service.cancel(key)
             gate.complete(Unit)
@@ -252,9 +271,11 @@ class TranslationServiceTest : BasePlatformTestCase() {
             val keys = List(2) { TranslationKey.Detached() }
 
             keys.forEachIndexed { index, key ->
-                assertTrue(service.translate(key, "source $index", onEvent = {
-                    if (it is TranslationEvent.Completed) completed[index].complete(Unit)
-                }, onFailure = { fail("unexpected failure: $it") }))
+                assertTrue(
+                    service.translate(key, "source $index", onEvent = {
+                        if (it is TranslationEvent.Completed) completed[index].complete(Unit)
+                    }, onFailure = { fail("unexpected failure: $it") })
+                )
             }
             runBlocking { withTimeout(15_000) { entered.forEach { it.await() } } }
             gates.forEach { it.complete(Unit) }
@@ -273,8 +294,11 @@ class TranslationServiceTest : BasePlatformTestCase() {
             val service = TranslationService(project, scope, translatorFactory = {
                 val index = calls.getAndIncrement()
                 createTranslator(config, executorFactory = {
-                    if (index < 3) ScriptedPromptExecutor(entered[index], gates[index], gateAtCallIndex = 1)
-                    else ScriptedPromptExecutor()
+                    if (index < 3) {
+                        ScriptedPromptExecutor(entered[index], gates[index], gateAtCallIndex = 1)
+                    } else {
+                        ScriptedPromptExecutor()
+                    }
                 })
             }, apiKeyStore = FakeApiKeyStore())
             val completed = List(4) { CompletableDeferred<Unit>() }
@@ -283,8 +307,10 @@ class TranslationServiceTest : BasePlatformTestCase() {
                 if (it is TranslationEvent.Completed) completed[index].complete(Unit)
             }, onFailure = { fail("unexpected failure: $it") })
 
-            repeat(3) { assertTrue(start(it)) }
-            runBlocking { withTimeout(15_000) { entered.forEach { it.await() } } }
+            repeat(3) {
+                assertTrue(start(it))
+                runBlocking { withTimeout(15_000) { entered[it].await() } }
+            }
             assertFalse(start(3))
             assertEquals(3, calls.get())
             assertTrue(completed.take(3).none { it.isCompleted })
@@ -315,9 +341,11 @@ class TranslationServiceTest : BasePlatformTestCase() {
             val keys = List(2) { TranslationKey.Detached() }
             val completed = List(2) { CompletableDeferred<Unit>() }
             keys.forEachIndexed { index, key ->
-                assertTrue(service.translate(key, "source $index", onEvent = {
-                    if (it is TranslationEvent.Completed) completed[index].complete(Unit)
-                }, onFailure = { fail("unexpected failure: $it") }))
+                assertTrue(
+                    service.translate(key, "source $index", onEvent = {
+                        if (it is TranslationEvent.Completed) completed[index].complete(Unit)
+                    }, onFailure = { fail("unexpected failure: $it") })
+                )
             }
             runBlocking { withTimeout(15_000) { entered.forEach { it.await() } } }
             service.cancel(keys[0])

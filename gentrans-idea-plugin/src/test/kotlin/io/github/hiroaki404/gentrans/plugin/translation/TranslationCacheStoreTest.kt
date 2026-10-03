@@ -1,9 +1,9 @@
 package io.github.hiroaki404.gentrans.plugin.translation
 
-import com.intellij.testFramework.LightVirtualFile
-import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileWithId
+import com.intellij.testFramework.LightVirtualFile
+import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import io.github.hiroaki404.gentrans.plugin.settings.GentransSettings
 
 class TranslationCacheStoreTest : BasePlatformTestCase() {

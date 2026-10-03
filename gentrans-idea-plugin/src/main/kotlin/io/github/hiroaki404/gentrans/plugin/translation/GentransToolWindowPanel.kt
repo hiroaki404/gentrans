@@ -75,26 +75,32 @@ internal class GentransToolWindowPanel @JvmOverloads constructor(
 
     init {
         Disposer.register(this, preview)
-        EditorFactory.getInstance().eventMulticaster.addDocumentListener(object : DocumentListener {
-            override fun documentChanged(event: DocumentEvent) {
-                val file = FileDocumentManager.getInstance().getFile(event.document)
-                if (file != null && file == displayedFile && displayedTranslation != null && inFlight[TranslationKey.File(file)] == null) {
-                    scheduleStaleCheck(Runnable { recheckStale() })
+        EditorFactory.getInstance().eventMulticaster.addDocumentListener(
+            object : DocumentListener {
+                override fun documentChanged(event: DocumentEvent) {
+                    val file = FileDocumentManager.getInstance().getFile(event.document)
+                    if (file != null && file == displayedFile && displayedTranslation != null && inFlight[TranslationKey.File(file)] == null) {
+                        scheduleStaleCheck(Runnable { recheckStale() })
+                    }
                 }
-            }
-        }, this)
+            },
+            this
+        )
         panel.toolbar = ActionManager.getInstance().createActionToolbar(
             "GenTrans",
             DefaultActionGroup(CopyAction(), SaveAction(), CancelAction(), RerunAction()),
             true,
         ).component
         panel.setContent(preview.component)
-        project.messageBus.connect(this).subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, object : FileEditorManagerListener {
-            override fun selectionChanged(event: FileEditorManagerEvent) {
-                val file = event.newFile ?: return
-                if (isMarkdownFileType(FileTypeRegistry.getInstance().getFileTypeByFile(file))) selectFile(file)
+        project.messageBus.connect(this).subscribe(
+            FileEditorManagerListener.FILE_EDITOR_MANAGER,
+            object : FileEditorManagerListener {
+                override fun selectionChanged(event: FileEditorManagerEvent) {
+                    val file = event.newFile ?: return
+                    if (isMarkdownFileType(FileTypeRegistry.getInstance().getFileTypeByFile(file))) selectFile(file)
+                }
             }
-        })
+        )
         FileEditorManager.getInstance(project).currentFile?.let { file ->
             if (isMarkdownFileType(FileTypeRegistry.getInstance().getFileTypeByFile(file))) selectFile(file)
         }
@@ -182,8 +188,11 @@ internal class GentransToolWindowPanel @JvmOverloads constructor(
                     }
                 }
             }
-            if (ApplicationManager.getApplication().isDispatchThread) display()
-            else ApplicationManager.getApplication().invokeLater { display() }
+            if (ApplicationManager.getApplication().isDispatchThread) {
+                display()
+            } else {
+                ApplicationManager.getApplication().invokeLater { display() }
+            }
         }
     }
 
@@ -204,8 +213,11 @@ internal class GentransToolWindowPanel @JvmOverloads constructor(
                     }
                 }
             }
-            if (ApplicationManager.getApplication().isDispatchThread) display()
-            else ApplicationManager.getApplication().invokeLater { display() }
+            if (ApplicationManager.getApplication().isDispatchThread) {
+                display()
+            } else {
+                ApplicationManager.getApplication().invokeLater { display() }
+            }
         }
     }
 
@@ -224,8 +236,11 @@ internal class GentransToolWindowPanel @JvmOverloads constructor(
     }
 
     private fun showInFlight(translation: InFlight) {
-        if (translation.partialText.isEmpty()) preview.showMessage(GentransBundle.message("gentrans.preview.translating"))
-        else preview.render(translation.partialText, translationNotice(translation.isSelection))
+        if (translation.partialText.isEmpty()) {
+            preview.showMessage(GentransBundle.message("gentrans.preview.translating"))
+        } else {
+            preview.render(translation.partialText, translationNotice(translation.isSelection))
+        }
     }
 
     private fun translationNotice(isSelection: Boolean, isStale: Boolean = false): String? =

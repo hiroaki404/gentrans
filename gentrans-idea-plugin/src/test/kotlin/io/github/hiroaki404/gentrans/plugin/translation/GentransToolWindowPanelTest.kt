@@ -29,6 +29,7 @@ private class PanelCacheStore : TranslationCacheStore {
     var reads = 0
     var failPut = false
     var persist = true
+
     @Volatile var lastReadOnEdt: Boolean? = null
 
     override fun get(file: VirtualFile): CachedTranslation? {
@@ -264,10 +265,14 @@ class GentransToolWindowPanelTest : BasePlatformTestCase() {
         val preview = PanelPreview()
         val entered = CompletableDeferred<Unit>()
         val gate = CompletableDeferred<Unit>()
-        val panel = panel(store, preview, serviceWithExecutors(
-            ScriptedPromptExecutor(entered, gate, gateAtCallIndex = 1),
-            ScriptedPromptExecutor(),
-        ))
+        val panel = panel(
+            store,
+            preview,
+            serviceWithExecutors(
+                ScriptedPromptExecutor(entered, gate, gateAtCallIndex = 1),
+                ScriptedPromptExecutor(),
+            )
+        )
 
         panel.startTranslation(first, "first", "first", false)
         PlatformTestUtil.waitWhileBusy { !entered.isCompleted }
@@ -289,10 +294,14 @@ class GentransToolWindowPanelTest : BasePlatformTestCase() {
         val firstGate = CompletableDeferred<Unit>()
         val secondEntered = CompletableDeferred<Unit>()
         val secondGate = CompletableDeferred<Unit>()
-        val panel = panel(store, PanelPreview(), serviceWithExecutors(
-            ScriptedPromptExecutor(firstEntered, firstGate, gateAtCallIndex = 1),
-            ScriptedPromptExecutor(secondEntered, secondGate, gateAtCallIndex = 1),
-        ))
+        val panel = panel(
+            store,
+            PanelPreview(),
+            serviceWithExecutors(
+                ScriptedPromptExecutor(firstEntered, firstGate, gateAtCallIndex = 1),
+                ScriptedPromptExecutor(secondEntered, secondGate, gateAtCallIndex = 1),
+            )
+        )
 
         panel.startTranslation(first, "first", "first", false)
         PlatformTestUtil.waitWhileBusy { !firstEntered.isCompleted }
@@ -313,9 +322,15 @@ class GentransToolWindowPanelTest : BasePlatformTestCase() {
         val preview = PanelPreview()
         val entered = List(3) { CompletableDeferred<Unit>() }
         val gates = List(3) { CompletableDeferred<Unit>() }
-        val panel = panel(store, preview, serviceWithExecutors(*Array(3) { index ->
-            ScriptedPromptExecutor(entered[index], gates[index], gateAtCallIndex = 1)
-        }))
+        val panel = panel(
+            store,
+            preview,
+            serviceWithExecutors(
+                *Array(3) { index ->
+                    ScriptedPromptExecutor(entered[index], gates[index], gateAtCallIndex = 1)
+                }
+            )
+        )
         store.entries[files[3]] = entry("source 3", "Cached")
 
         repeat(3) { index ->
@@ -347,9 +362,13 @@ class GentransToolWindowPanelTest : BasePlatformTestCase() {
         assertNull(store.entries[file])
 
         val failedPreview = PanelPreview()
-        val failed = panel(store, failedPreview, TranslationService(project, scope, translatorFactory = {
-            throw IllegalStateException("failed")
-        }, apiKeyStore = FakeApiKeyStore()))
+        val failed = panel(
+            store,
+            failedPreview,
+            TranslationService(project, scope, translatorFactory = {
+                throw IllegalStateException("failed")
+            }, apiKeyStore = FakeApiKeyStore())
+        )
         failed.startTranslation(file, "source", "source", false)
         PlatformTestUtil.waitWhileBusy { failedPreview.message?.contains("failed") != true }
         assertNull(store.entries[file])

@@ -20,8 +20,8 @@ import io.github.hiroaki404.gentrans.plugin.settings.GentransSettings
 import io.github.hiroaki404.gentrans.plugin.settings.PasswordSafeApiKeyStore
 import io.github.hiroaki404.gentrans.plugin.settings.resolveConfig
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
@@ -89,10 +89,12 @@ internal class TranslationService @JvmOverloads constructor(
                                     withContext(Dispatchers.EDT) {
                                         if (isCurrent(key, currentGeneration)) {
                                             if (event is TranslationEvent.Completed) {
-                                                onCompletedOrigin(TranslationOrigin(
-                                                    resolved.translatorConfig.provider.key,
-                                                    resolved.translatorConfig.model,
-                                                ))
+                                                onCompletedOrigin(
+                                                    TranslationOrigin(
+                                                        resolved.translatorConfig.provider.key,
+                                                        resolved.translatorConfig.model,
+                                                    )
+                                                )
                                             }
                                             onEvent(event)
                                         }

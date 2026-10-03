@@ -19,6 +19,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import java.util.concurrent.Executor
+import java.util.concurrent.atomic.AtomicInteger
 import javax.swing.JComponent
 import javax.swing.JPanel
 
@@ -256,6 +257,82 @@ class GentransToolWindowPanelTest : BasePlatformTestCase() {
         assertNull(preview.markdown)
     }
 
+    fun testStartingAnotherFileKeepsFirstTranslationRunningAndStoresBoth() {
+        val first = file("concurrent-first.md", "first")
+        val second = file("concurrent-second.md", "second")
+        val store = PanelCacheStore()
+        val preview = PanelPreview()
+        val entered = CompletableDeferred<Unit>()
+        val gate = CompletableDeferred<Unit>()
+        val panel = panel(store, preview, serviceWithExecutors(
+            ScriptedPromptExecutor(entered, gate, gateAtCallIndex = 1),
+            ScriptedPromptExecutor(),
+        ))
+
+        panel.startTranslation(first, "first", "first", false)
+        PlatformTestUtil.waitWhileBusy { !entered.isCompleted }
+        panel.startTranslation(second, "second", "second", false)
+        PlatformTestUtil.waitWhileBusy { store.entries[second] == null }
+        gate.complete(Unit)
+        PlatformTestUtil.waitWhileBusy { store.entries[first] == null }
+
+        assertEquals("Hello World!", store.entries[first]?.translatedText)
+        assertEquals("Hello World!", store.entries[second]?.translatedText)
+        assertEquals("Hello World!", preview.markdown)
+    }
+
+    fun testCancelStopsOnlyDisplayedFile() {
+        val first = file("cancel-first.md", "first")
+        val second = file("cancel-second.md", "second")
+        val store = PanelCacheStore()
+        val firstEntered = CompletableDeferred<Unit>()
+        val firstGate = CompletableDeferred<Unit>()
+        val secondEntered = CompletableDeferred<Unit>()
+        val secondGate = CompletableDeferred<Unit>()
+        val panel = panel(store, PanelPreview(), serviceWithExecutors(
+            ScriptedPromptExecutor(firstEntered, firstGate, gateAtCallIndex = 1),
+            ScriptedPromptExecutor(secondEntered, secondGate, gateAtCallIndex = 1),
+        ))
+
+        panel.startTranslation(first, "first", "first", false)
+        PlatformTestUtil.waitWhileBusy { !firstEntered.isCompleted }
+        panel.startTranslation(second, "second", "second", false)
+        PlatformTestUtil.waitWhileBusy { !secondEntered.isCompleted }
+        panel.cancelTranslation()
+        firstGate.complete(Unit)
+        secondGate.complete(Unit)
+        PlatformTestUtil.waitWhileBusy { store.entries[first] == null }
+
+        assertEquals("Hello World!", store.entries[first]?.translatedText)
+        assertNull(store.entries[second])
+    }
+
+    fun testLimitMessageDoesNotChangeCacheOrRunningTranslations() {
+        val files = List(4) { file("limit-$it.md", "source $it") }
+        val store = PanelCacheStore()
+        val preview = PanelPreview()
+        val entered = List(3) { CompletableDeferred<Unit>() }
+        val gates = List(3) { CompletableDeferred<Unit>() }
+        val panel = panel(store, preview, serviceWithExecutors(*Array(3) { index ->
+            ScriptedPromptExecutor(entered[index], gates[index], gateAtCallIndex = 1)
+        }))
+        store.entries[files[3]] = entry("source 3", "Cached")
+
+        repeat(3) { index ->
+            panel.startTranslation(files[index], "source $index", "source $index", false)
+            PlatformTestUtil.waitWhileBusy { !entered[index].isCompleted }
+        }
+        panel.startTranslation(files[3], "source 3", "source 3", false)
+        assertEquals(GentransBundle.message("gentrans.preview.limitReached", TranslationService.MAX_CONCURRENT_TRANSLATIONS), preview.message)
+        assertEquals("Cached", store.entries[files[3]]?.translatedText)
+
+        gates.forEach { it.complete(Unit) }
+        PlatformTestUtil.waitWhileBusy { files.take(3).any { store.entries[it] == null } }
+        assertEquals("Cached", store.entries[files[3]]?.translatedText)
+        panel.selectFile(files[3])
+        assertEquals("Cached", preview.markdown)
+    }
+
     fun testCancelAndFailureDoNotStore() {
         val file = file("cancel.md", "source")
         val store = PanelCacheStore()
@@ -424,6 +501,13 @@ class GentransToolWindowPanelTest : BasePlatformTestCase() {
         TranslationService(project, scope, translatorFactory = { config: TranslatorConfig ->
             createTranslator(config, executorFactory = { executor })
         }, apiKeyStore = FakeApiKeyStore())
+
+    private fun serviceWithExecutors(vararg executors: ScriptedPromptExecutor): TranslationService {
+        val next = AtomicInteger()
+        return TranslationService(project, scope, translatorFactory = { config: TranslatorConfig ->
+            createTranslator(config, executorFactory = { executors[next.getAndIncrement()] })
+        }, apiKeyStore = FakeApiKeyStore())
+    }
 
     private fun panel(store: PanelCacheStore, preview: PanelPreview, service: TranslationService): GentransToolWindowPanel =
         GentransToolWindowPanel(project, store, preview, service, Executor { it.run() }, { it.run() }).also {

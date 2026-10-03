@@ -26,6 +26,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
+import java.util.concurrent.atomic.AtomicInteger
 
 internal class FakeApiKeyStore(private val key: String? = "dummy") : ApiKeyStore {
     override fun get(provider: Provider): String? = key
@@ -107,6 +108,7 @@ class TranslationServiceTest : BasePlatformTestCase() {
             val completed = CompletableDeferred<Unit>()
 
             service.translate(
+                TranslationKey.Detached(),
                 "hello",
                 onEvent = {
                     events += it
@@ -137,20 +139,22 @@ class TranslationServiceTest : BasePlatformTestCase() {
         }
     }
 
-    fun testStartingANewTranslationCancelsThePreviousJob() {
+    fun testRetranslatingTheSameKeyCancelsThePreviousJob() {
         val scope = newScope()
         try {
             val entered = CompletableDeferred<Unit>()
             val gate = CompletableDeferred<Unit>()
+            val otherEntered = CompletableDeferred<Unit>()
+            val otherGate = CompletableDeferred<Unit>()
             var callCount = 0
             val service = TranslationService(
                 project,
                 scope,
                 translatorFactory = {
-                    val executor = if (callCount++ == 0) {
-                        ScriptedPromptExecutor(entered = entered, gate = gate, gateAtCallIndex = 1)
-                    } else {
-                        ScriptedPromptExecutor()
+                    val executor = when (callCount++) {
+                        0 -> ScriptedPromptExecutor(entered = entered, gate = gate, gateAtCallIndex = 1)
+                        1 -> ScriptedPromptExecutor(entered = otherEntered, gate = otherGate, gateAtCallIndex = 1)
+                        else -> ScriptedPromptExecutor()
                     }
                     createTranslator(config, executorFactory = { executor })
                 },
@@ -160,11 +164,18 @@ class TranslationServiceTest : BasePlatformTestCase() {
             val eventsA = mutableListOf<TranslationEvent>()
             val eventsB = mutableListOf<TranslationEvent>()
             val completedB = CompletableDeferred<Unit>()
+            val completedOther = CompletableDeferred<Unit>()
+            val key = TranslationKey.Detached()
 
-            service.translate("first", onEvent = { eventsA += it }, onFailure = { fail("unexpected failure: $it") })
+            service.translate(key, "first", onEvent = { eventsA += it }, onFailure = { fail("unexpected failure: $it") })
             runBlocking { withTimeout(15_000) { entered.await() } }
+            service.translate(TranslationKey.Detached(), "other", onEvent = {
+                if (it is TranslationEvent.Completed) completedOther.complete(Unit)
+            }, onFailure = { fail("unexpected failure: $it") })
+            runBlocking { withTimeout(15_000) { otherEntered.await() } }
 
             service.translate(
+                key,
                 "second",
                 onEvent = {
                     eventsB += it
@@ -174,6 +185,8 @@ class TranslationServiceTest : BasePlatformTestCase() {
             )
             runBlocking { withTimeout(15_000) { completedB.await() } }
             gate.complete(Unit)
+            otherGate.complete(Unit)
+            runBlocking { withTimeout(15_000) { completedOther.await() } }
 
             assertEquals(listOf(TranslationEvent.SourceLanguageDetected(language = "Japanese", totalChunks = 1)), eventsA)
             assertTrue(eventsB.last() is TranslationEvent.Completed)
@@ -201,7 +214,9 @@ class TranslationServiceTest : BasePlatformTestCase() {
 
             val events = mutableListOf<TranslationEvent>()
             val origins = mutableListOf<TranslationOrigin>()
+            val key = TranslationKey.Detached()
             service.translate(
+                key,
                 "hello",
                 onEvent = { events += it },
                 onFailure = { fail("unexpected failure: $it") },
@@ -209,13 +224,106 @@ class TranslationServiceTest : BasePlatformTestCase() {
             )
             runBlocking { withTimeout(15_000) { entered.await() } }
 
-            service.cancel()
+            service.cancel(key)
             gate.complete(Unit)
             // Give the cancelled coroutine a chance to (wrongly) deliver more events, if it were going to.
             runBlocking { delay(500) }
 
             assertEquals(listOf(TranslationEvent.SourceLanguageDetected(language = "Japanese", totalChunks = 1)), events)
             assertTrue(origins.isEmpty())
+        } finally {
+            scope.cancel()
+        }
+    }
+
+    fun testDifferentKeysCompleteConcurrently() {
+        val scope = newScope()
+        try {
+            val entered = List(2) { CompletableDeferred<Unit>() }
+            val gates = List(2) { CompletableDeferred<Unit>() }
+            val calls = AtomicInteger()
+            val service = TranslationService(project, scope, translatorFactory = {
+                val index = calls.getAndIncrement()
+                createTranslator(config, executorFactory = {
+                    ScriptedPromptExecutor(entered[index], gates[index], gateAtCallIndex = 1)
+                })
+            }, apiKeyStore = FakeApiKeyStore())
+            val completed = List(2) { CompletableDeferred<Unit>() }
+            val keys = List(2) { TranslationKey.Detached() }
+
+            keys.forEachIndexed { index, key ->
+                assertTrue(service.translate(key, "source $index", onEvent = {
+                    if (it is TranslationEvent.Completed) completed[index].complete(Unit)
+                }, onFailure = { fail("unexpected failure: $it") }))
+            }
+            runBlocking { withTimeout(15_000) { entered.forEach { it.await() } } }
+            gates.forEach { it.complete(Unit) }
+            runBlocking { withTimeout(15_000) { completed.forEach { it.await() } } }
+        } finally {
+            scope.cancel()
+        }
+    }
+
+    fun testLimitRejectsFourthKeyAndAcceptsAfterCompletion() {
+        val scope = newScope()
+        try {
+            val entered = List(3) { CompletableDeferred<Unit>() }
+            val gates = List(3) { CompletableDeferred<Unit>() }
+            val calls = AtomicInteger()
+            val service = TranslationService(project, scope, translatorFactory = {
+                val index = calls.getAndIncrement()
+                createTranslator(config, executorFactory = {
+                    if (index < 3) ScriptedPromptExecutor(entered[index], gates[index], gateAtCallIndex = 1)
+                    else ScriptedPromptExecutor()
+                })
+            }, apiKeyStore = FakeApiKeyStore())
+            val completed = List(4) { CompletableDeferred<Unit>() }
+            val keys = List(4) { TranslationKey.Detached() }
+            fun start(index: Int): Boolean = service.translate(keys[index], "source $index", onEvent = {
+                if (it is TranslationEvent.Completed) completed[index].complete(Unit)
+            }, onFailure = { fail("unexpected failure: $it") })
+
+            repeat(3) { assertTrue(start(it)) }
+            runBlocking { withTimeout(15_000) { entered.forEach { it.await() } } }
+            assertFalse(start(3))
+            assertEquals(3, calls.get())
+            assertTrue(completed.take(3).none { it.isCompleted })
+
+            gates[0].complete(Unit)
+            runBlocking { withTimeout(15_000) { completed[0].await() } }
+            runBlocking { withTimeout(15_000) { while (!start(3)) delay(10) } }
+            gates[1].complete(Unit)
+            gates[2].complete(Unit)
+            runBlocking { withTimeout(15_000) { completed.drop(1).forEach { it.await() } } }
+        } finally {
+            scope.cancel()
+        }
+    }
+
+    fun testCancelOnlyStopsTheSpecifiedKey() {
+        val scope = newScope()
+        try {
+            val entered = List(2) { CompletableDeferred<Unit>() }
+            val gates = List(2) { CompletableDeferred<Unit>() }
+            val calls = AtomicInteger()
+            val service = TranslationService(project, scope, translatorFactory = {
+                val index = calls.getAndIncrement()
+                createTranslator(config, executorFactory = {
+                    ScriptedPromptExecutor(entered[index], gates[index], gateAtCallIndex = 1)
+                })
+            }, apiKeyStore = FakeApiKeyStore())
+            val keys = List(2) { TranslationKey.Detached() }
+            val completed = List(2) { CompletableDeferred<Unit>() }
+            keys.forEachIndexed { index, key ->
+                assertTrue(service.translate(key, "source $index", onEvent = {
+                    if (it is TranslationEvent.Completed) completed[index].complete(Unit)
+                }, onFailure = { fail("unexpected failure: $it") }))
+            }
+            runBlocking { withTimeout(15_000) { entered.forEach { it.await() } } }
+            service.cancel(keys[0])
+            gates.forEach { it.complete(Unit) }
+            runBlocking { withTimeout(15_000) { completed[1].await() } }
+            assertFalse(completed[0].isCompleted)
         } finally {
             scope.cancel()
         }
@@ -244,6 +352,7 @@ class TranslationServiceTest : BasePlatformTestCase() {
 
             val failure = CompletableDeferred<TranslationFailure>()
             service.translate(
+                TranslationKey.Detached(),
                 "hello",
                 onEvent = { fail("unexpected event: $it") },
                 onFailure = { failure.complete(it) },

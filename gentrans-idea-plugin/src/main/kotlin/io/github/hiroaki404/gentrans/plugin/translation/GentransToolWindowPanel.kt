@@ -44,6 +44,7 @@ internal class GentransToolWindowPanel @JvmOverloads constructor(
     staleCheckScheduler: ((Runnable) -> Unit)? = null,
 ) : Disposable {
     private class InFlight(
+        val key: TranslationKey,
         val file: VirtualFile?,
         val fileHash: String,
         val sourceHash: String,
@@ -54,8 +55,9 @@ internal class GentransToolWindowPanel @JvmOverloads constructor(
     )
 
     private val panel = SimpleToolWindowPanel(true, true)
-    private var inFlight: InFlight? = null
+    private val inFlight = mutableMapOf<TranslationKey, InFlight>()
     private var displayedFile: VirtualFile? = null
+    private var displayedKey: TranslationKey? = null
     private var displayedTranslation: CachedTranslation? = null
     private var displayedStale = false
     private var lastCompleted: Pair<VirtualFile?, CachedTranslation>? = null
@@ -76,7 +78,7 @@ internal class GentransToolWindowPanel @JvmOverloads constructor(
         EditorFactory.getInstance().eventMulticaster.addDocumentListener(object : DocumentListener {
             override fun documentChanged(event: DocumentEvent) {
                 val file = FileDocumentManager.getInstance().getFile(event.document)
-                if (file == displayedFile && displayedTranslation != null && inFlight?.file != file) {
+                if (file != null && file == displayedFile && displayedTranslation != null && inFlight[TranslationKey.File(file)] == null) {
                     scheduleStaleCheck(Runnable { recheckStale() })
                 }
             }
@@ -99,30 +101,41 @@ internal class GentransToolWindowPanel @JvmOverloads constructor(
     }
 
     fun startTranslation(sourceFile: VirtualFile?, text: String, wholeFileText: String, isSelection: Boolean) {
-        val translation = InFlight(sourceFile, sha256(wholeFileText), sha256(text), isSelection)
-        inFlight = translation
-        displayedFile = sourceFile
-        displayedTranslation = null
-        displayedStale = false
-        lastCompleted = null
-        displayRequest++
-        preview.showMessage(GentransBundle.message("gentrans.preview.translating"))
-        translationService.translate(
+        val key = sourceFile?.let { TranslationKey.File(it) } ?: TranslationKey.Detached()
+        val translation = InFlight(key, sourceFile, sha256(wholeFileText), sha256(text), isSelection)
+        val accepted = translationService.translate(
+            key,
             text,
             onEvent = { event -> handleEvent(translation, event) },
             onFailure = { failure -> handleFailure(translation, failure) },
             onCompletedOrigin = { origin -> translation.origin = origin },
         )
+        displayedFile = sourceFile
+        displayedKey = key
+        displayRequest++
+        if (!accepted) {
+            displayedTranslation = null
+            displayedStale = false
+            lastCompleted = null
+            preview.showMessage(GentransBundle.message("gentrans.preview.limitReached", TranslationService.MAX_CONCURRENT_TRANSLATIONS))
+            return
+        }
+        inFlight[key] = translation
+        displayedTranslation = null
+        displayedStale = false
+        lastCompleted = null
+        preview.showMessage(GentransBundle.message("gentrans.preview.translating"))
     }
 
     internal fun selectFile(file: VirtualFile) {
         if (displayedFile != file) lastCompleted = null
         displayedFile = file
+        displayedKey = TranslationKey.File(file)
         displayedTranslation = null
         displayedStale = false
         displayRequest++
-        val translation = inFlight
-        if (translation?.file == file) {
+        val translation = inFlight[TranslationKey.File(file)]
+        if (translation != null) {
             showInFlight(translation)
         } else {
             refreshDisplayed()
@@ -131,8 +144,8 @@ internal class GentransToolWindowPanel @JvmOverloads constructor(
 
     fun refreshDisplayed() {
         val file = displayedFile ?: return
-        val translation = inFlight
-        if (translation?.file == file) showInFlight(translation)
+        val translation = inFlight[TranslationKey.File(file)]
+        if (translation != null) showInFlight(translation)
         val request = ++displayRequest
         displayedTranslation = lastCompleted?.takeIf { it.first == file }?.second
         displayedStale = false
@@ -151,8 +164,8 @@ internal class GentransToolWindowPanel @JvmOverloads constructor(
             }
             val display = {
                 if (!project.isDisposed && displayedFile == file && displayRequest == request) {
-                    val currentTranslation = inFlight
-                    if (currentTranslation?.file == file) {
+                    val currentTranslation = inFlight[TranslationKey.File(file)]
+                    if (currentTranslation != null) {
                         showInFlight(currentTranslation)
                     } else {
                         val shownEntry = entry ?: lastCompleted?.takeIf { it.first == file }?.second
@@ -177,7 +190,7 @@ internal class GentransToolWindowPanel @JvmOverloads constructor(
     private fun recheckStale() {
         val file = displayedFile ?: return
         val entry = displayedTranslation ?: return
-        if (inFlight?.file == file) return
+        if (inFlight[TranslationKey.File(file)] != null) return
         val request = displayRequest
         val currentText = FileDocumentManager.getInstance().getDocument(file)?.immutableCharSequence?.toString() ?: return
         cacheExecutor.execute {
@@ -204,9 +217,9 @@ internal class GentransToolWindowPanel @JvmOverloads constructor(
     }
 
     internal fun cancelTranslation() {
-        val translation = inFlight ?: return
-        inFlight = null
-        translationService.cancel()
+        val key = displayedKey ?: return
+        val translation = inFlight.remove(key) ?: return
+        translationService.cancel(key)
         if (displayedFile == translation.file) refreshDisplayed()
     }
 
@@ -222,16 +235,16 @@ internal class GentransToolWindowPanel @JvmOverloads constructor(
         ).takeIf { it.isNotEmpty() }?.joinToString("\n")
 
     private fun handleEvent(translation: InFlight, event: TranslationEvent) {
-        if (inFlight !== translation) return
+        if (inFlight[translation.key] !== translation) return
         when (event) {
             is TranslationEvent.SourceLanguageDetected -> Unit
             is TranslationEvent.TargetLanguageDecided -> translation.targetLanguage = event.language
             is TranslationEvent.ChunkTranslated -> {
                 translation.partialText = event.translatedTextSoFar
-                if (displayedFile == translation.file) preview.render(translation.partialText, translationNotice(translation.isSelection))
+                if (displayedKey == translation.key) preview.render(translation.partialText, translationNotice(translation.isSelection))
             }
             is TranslationEvent.Completed -> {
-                inFlight = null
+                inFlight.remove(translation.key)
                 val origin = translation.origin
                 val generation = try {
                     store.currentGeneration()
@@ -256,7 +269,7 @@ internal class GentransToolWindowPanel @JvmOverloads constructor(
                         LOG.warn("Failed to store translation cache for ${translation.file.path}", error)
                     }
                 }
-                if (displayedFile == translation.file) {
+                if (displayedKey == translation.key) {
                     displayRequest++
                     displayedTranslation = entry
                     lastCompleted = translation.file to entry
@@ -271,9 +284,9 @@ internal class GentransToolWindowPanel @JvmOverloads constructor(
     }
 
     private fun handleFailure(translation: InFlight, failure: TranslationFailure) {
-        if (inFlight !== translation) return
-        inFlight = null
-        if (displayedFile != translation.file) return
+        if (inFlight[translation.key] !== translation) return
+        inFlight.remove(translation.key)
+        if (displayedKey != translation.key) return
         val message = when (failure) {
             is TranslationFailure.ApiKeyMissing -> GentransBundle.message("gentrans.failure.apiKeyMissing", failure.provider.key)
             is TranslationFailure.Generic -> GentransBundle.message("gentrans.failure.generic", failure.message)

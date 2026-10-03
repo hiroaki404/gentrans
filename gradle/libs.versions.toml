@@ -1,6 +1,6 @@
 [versions]
 gentrans = "0.4.0"
-kotlin = "2.3.10"
+kotlin = "2.4.20"
 shadow = "8.1.1"
 clikt = "5.0.3"
 koogAgents = "1.2.0"

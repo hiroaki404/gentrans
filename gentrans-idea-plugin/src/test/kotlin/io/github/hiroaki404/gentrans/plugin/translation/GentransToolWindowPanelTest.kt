@@ -1,6 +1,8 @@
 package io.github.hiroaki404.gentrans.plugin.translation
 
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.command.WriteCommandAction
+import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.testFramework.PlatformTestUtil
@@ -157,6 +159,80 @@ class GentransToolWindowPanelTest : BasePlatformTestCase() {
 
         panel.selectFile(missing)
         assertEquals(GentransBundle.message("gentrans.preview.untranslated"), preview.message)
+    }
+
+    fun testEditingDisplayedCachedFileShowsStaleNotice() {
+        val file = file("edited.md", "source")
+        val store = PanelCacheStore()
+        val preview = PanelPreview()
+        store.entries[file] = entry("source", "Cached")
+        val panel = panel(store, preview, service())
+        panel.selectFile(file)
+
+        val document = FileDocumentManager.getInstance().getDocument(file)!!
+        WriteCommandAction.runWriteCommandAction(project) { document.insertString(0, "x") }
+
+        assertEquals("Cached", preview.markdown)
+        assertEquals(GentransBundle.message("gentrans.preview.staleNotice"), preview.notice)
+    }
+
+    fun testRevertingDisplayedFileRemovesStaleNoticeAndUnchangedStateDoesNotRender() {
+        val file = file("reverted.md", "source")
+        val store = PanelCacheStore()
+        val preview = PanelPreview()
+        store.entries[file] = entry("source", "Cached")
+        val panel = panel(store, preview, service())
+        panel.selectFile(file)
+        val document = FileDocumentManager.getInstance().getDocument(file)!!
+        val initialRenderCount = preview.renderedNotices.size
+
+        WriteCommandAction.runWriteCommandAction(project) { document.insertString(0, "x") }
+        assertEquals(initialRenderCount + 1, preview.renderedNotices.size)
+        WriteCommandAction.runWriteCommandAction(project) { document.insertString(0, "y") }
+        assertEquals(initialRenderCount + 1, preview.renderedNotices.size)
+        WriteCommandAction.runWriteCommandAction(project) { document.deleteString(0, 2) }
+
+        assertNull(preview.notice)
+        assertEquals(initialRenderCount + 2, preview.renderedNotices.size)
+    }
+
+    fun testEditingNonDisplayedFileDoesNotRender() {
+        val displayed = file("displayed.md", "source")
+        val other = file("other.md", "other")
+        val store = PanelCacheStore()
+        val preview = PanelPreview()
+        store.entries[displayed] = entry("source", "Cached")
+        val panel = panel(store, preview, service())
+        panel.selectFile(displayed)
+        val renderCount = preview.renderedNotices.size
+
+        val document = FileDocumentManager.getInstance().getDocument(other)!!
+        WriteCommandAction.runWriteCommandAction(project) { document.insertString(0, "x") }
+
+        assertEquals(renderCount, preview.renderedNotices.size)
+        assertNull(preview.notice)
+    }
+
+    fun testEditDuringTranslationShowsStaleNoticeOnCompletion() {
+        val file = file("during-translation.md", "source")
+        val store = PanelCacheStore()
+        val preview = PanelPreview()
+        val entered = CompletableDeferred<Unit>()
+        val gate = CompletableDeferred<Unit>()
+        val panel = panel(store, preview, service(ScriptedPromptExecutor(entered, gate, gateAtCallIndex = 1)))
+
+        panel.startTranslation(file, "source", "source", false)
+        PlatformTestUtil.waitWhileBusy { !entered.isCompleted }
+        val document = FileDocumentManager.getInstance().getDocument(file)!!
+        WriteCommandAction.runWriteCommandAction(project) { document.insertString(0, "x") }
+        gate.complete(Unit)
+        PlatformTestUtil.waitWhileBusy { panel.displayedTranslationText != "Hello World!" }
+
+        assertEquals(GentransBundle.message("gentrans.preview.staleNotice"), preview.notice)
+    }
+
+    fun testStaleCheckDelayIsOneSecond() {
+        assertEquals(1000, GentransToolWindowPanel.STALE_CHECK_DELAY_MS)
     }
 
     fun testSwitchingFilesDoesNotCancelOrOverwriteOtherFilesPreview() {
@@ -350,7 +426,7 @@ class GentransToolWindowPanelTest : BasePlatformTestCase() {
         }, apiKeyStore = FakeApiKeyStore())
 
     private fun panel(store: PanelCacheStore, preview: PanelPreview, service: TranslationService): GentransToolWindowPanel =
-        GentransToolWindowPanel(project, store, preview, service, Executor { it.run() }).also {
+        GentransToolWindowPanel(project, store, preview, service, Executor { it.run() }, { it.run() }).also {
             Disposer.register(testRootDisposable, it)
         }
 }

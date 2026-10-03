@@ -10,6 +10,9 @@ import com.intellij.openapi.application.runWriteAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.Logger
+import com.intellij.openapi.editor.EditorFactory
+import com.intellij.openapi.editor.event.DocumentEvent
+import com.intellij.openapi.editor.event.DocumentListener
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent
@@ -21,6 +24,7 @@ import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.ui.SimpleToolWindowPanel
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.util.Alarm
 import io.github.hiroaki404.gentrans.core.api.TranslationEvent
 import io.github.hiroaki404.gentrans.plugin.GentransBundle
 import io.github.hiroaki404.gentrans.plugin.preview.JBHtmlPaneTranslationPreview
@@ -37,6 +41,7 @@ internal class GentransToolWindowPanel @JvmOverloads constructor(
     private val preview: TranslationPreview = JBHtmlPaneTranslationPreview(),
     private val translationService: TranslationService = TranslationService.getInstance(project),
     private val cacheExecutor: Executor = Executor { ApplicationManager.getApplication().executeOnPooledThread(it) },
+    staleCheckScheduler: ((Runnable) -> Unit)? = null,
 ) : Disposable {
     private class InFlight(
         val file: VirtualFile?,
@@ -52,14 +57,30 @@ internal class GentransToolWindowPanel @JvmOverloads constructor(
     private var inFlight: InFlight? = null
     private var displayedFile: VirtualFile? = null
     private var displayedTranslation: CachedTranslation? = null
+    private var displayedStale = false
     private var lastCompleted: Pair<VirtualFile?, CachedTranslation>? = null
     private var displayRequest = 0L
+    private val scheduleStaleCheck: (Runnable) -> Unit = staleCheckScheduler
+        ?: Alarm(Alarm.ThreadToUse.SWING_THREAD, this).let { alarm ->
+            { runnable: Runnable ->
+                alarm.cancelAllRequests()
+                alarm.addRequest(runnable, STALE_CHECK_DELAY_MS)
+            }
+        }
 
     val component: JComponent = panel
     internal val displayedTranslationText: String? get() = displayedTranslation?.translatedText
 
     init {
         Disposer.register(this, preview)
+        EditorFactory.getInstance().eventMulticaster.addDocumentListener(object : DocumentListener {
+            override fun documentChanged(event: DocumentEvent) {
+                val file = FileDocumentManager.getInstance().getFile(event.document)
+                if (file == displayedFile && displayedTranslation != null && inFlight?.file != file) {
+                    scheduleStaleCheck(Runnable { recheckStale() })
+                }
+            }
+        }, this)
         panel.toolbar = ActionManager.getInstance().createActionToolbar(
             "GenTrans",
             DefaultActionGroup(CopyAction(), SaveAction(), CancelAction(), RerunAction()),
@@ -82,6 +103,7 @@ internal class GentransToolWindowPanel @JvmOverloads constructor(
         inFlight = translation
         displayedFile = sourceFile
         displayedTranslation = null
+        displayedStale = false
         lastCompleted = null
         displayRequest++
         preview.showMessage(GentransBundle.message("gentrans.preview.translating"))
@@ -97,6 +119,7 @@ internal class GentransToolWindowPanel @JvmOverloads constructor(
         if (displayedFile != file) lastCompleted = null
         displayedFile = file
         displayedTranslation = null
+        displayedStale = false
         displayRequest++
         val translation = inFlight
         if (translation?.file == file) {
@@ -112,6 +135,7 @@ internal class GentransToolWindowPanel @JvmOverloads constructor(
         if (translation?.file == file) showInFlight(translation)
         val request = ++displayRequest
         displayedTranslation = lastCompleted?.takeIf { it.first == file }?.second
+        displayedStale = false
         cacheExecutor.execute {
             val entry = try {
                 store.get(file)
@@ -134,11 +158,36 @@ internal class GentransToolWindowPanel @JvmOverloads constructor(
                         val shownEntry = entry ?: lastCompleted?.takeIf { it.first == file }?.second
                         displayedTranslation = shownEntry
                         if (shownEntry == null) {
+                            displayedStale = false
                             preview.showMessage(GentransBundle.message("gentrans.preview.untranslated"))
                         } else {
                             val currentText = FileDocumentManager.getInstance().getDocument(file)?.text ?: fileText
-                            preview.render(shownEntry.translatedText, translationNotice(shownEntry.isSelection, shownEntry.isStale(currentText)))
+                            val isStale = shownEntry.isStale(currentText)
+                            displayedStale = isStale
+                            preview.render(shownEntry.translatedText, translationNotice(shownEntry.isSelection, isStale))
                         }
+                    }
+                }
+            }
+            if (ApplicationManager.getApplication().isDispatchThread) display()
+            else ApplicationManager.getApplication().invokeLater { display() }
+        }
+    }
+
+    private fun recheckStale() {
+        val file = displayedFile ?: return
+        val entry = displayedTranslation ?: return
+        if (inFlight?.file == file) return
+        val request = displayRequest
+        val currentText = FileDocumentManager.getInstance().getDocument(file)?.immutableCharSequence?.toString() ?: return
+        cacheExecutor.execute {
+            val hash = sha256(currentText)
+            val display = {
+                if (!project.isDisposed && displayedFile == file && displayRequest == request && displayedTranslation === entry) {
+                    val isStale = entry.fileHash != hash
+                    if (displayedStale != isStale) {
+                        displayedStale = isStale
+                        preview.render(entry.translatedText, translationNotice(entry.isSelection, isStale))
                     }
                 }
             }
@@ -150,6 +199,7 @@ internal class GentransToolWindowPanel @JvmOverloads constructor(
     fun onCacheCleared() {
         lastCompleted = null
         displayedTranslation = null
+        displayedStale = false
         refreshDisplayed()
     }
 
@@ -210,7 +260,10 @@ internal class GentransToolWindowPanel @JvmOverloads constructor(
                     displayRequest++
                     displayedTranslation = entry
                     lastCompleted = translation.file to entry
-                    preview.render(event.text, translationNotice(translation.isSelection))
+                    val currentText = translation.file?.let { FileDocumentManager.getInstance().getDocument(it)?.text }
+                    val isStale = currentText != null && translation.fileHash != sha256(currentText)
+                    displayedStale = isStale
+                    preview.render(event.text, translationNotice(translation.isSelection, isStale))
                 }
             }
             is TranslationEvent.Summarized -> Unit
@@ -269,6 +322,7 @@ internal class GentransToolWindowPanel @JvmOverloads constructor(
     override fun dispose() = Unit
 
     companion object {
+        const val STALE_CHECK_DELAY_MS = 1000
         private val LOG = Logger.getInstance(GentransToolWindowPanel::class.java)
 
         fun getInstance(project: Project): GentransToolWindowPanel = project.service()

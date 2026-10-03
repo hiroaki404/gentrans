@@ -26,6 +26,7 @@ local.properties
 # Local cache/state for the intellij-platform-gradle-plugin (resolved platform artifacts,
 # coroutines debug javaagent, self-update lock) - machine-local, not project state.
 .intellijPlatform/
+.idea-sandbox/
 
 ### Eclipse ###
 .apt_generated

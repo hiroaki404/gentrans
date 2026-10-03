@@ -13,6 +13,7 @@ import com.intellij.openapi.wm.ToolWindowManager
 import io.github.hiroaki404.gentrans.core.api.InputFormat
 import io.github.hiroaki404.gentrans.core.api.estimateChunkCount
 import io.github.hiroaki404.gentrans.plugin.GentransBundle
+import java.nio.charset.StandardCharsets
 
 internal const val MARKDOWN_FILE_TYPE_NAME = "Markdown"
 
@@ -23,6 +24,8 @@ internal fun translationText(
     editorText: String?,
     fileText: String?,
 ): String? = selectedText?.takeIf { it.isNotEmpty() } ?: editorText ?: fileText
+
+internal fun isTranslationSelection(selectedText: String?): Boolean = !selectedText.isNullOrEmpty()
 
 internal class TranslateMarkdownAction : AnAction() {
     override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
@@ -37,11 +40,19 @@ internal class TranslateMarkdownAction : AnAction() {
         val project = event.project ?: return
         val file = event.getData(CommonDataKeys.VIRTUAL_FILE)
         val editor = event.getData(CommonDataKeys.EDITOR)
+        val selectedText = editor?.selectionModel?.selectedText
+        val editorText = editor?.document?.text
+        val fileText = file?.let {
+            FileDocumentManager.getInstance().getDocument(it)?.text
+                ?: runCatching { String(it.contentsToByteArray(), StandardCharsets.UTF_8) }.getOrNull()
+        }
         val text = translationText(
-            selectedText = editor?.selectionModel?.selectedText,
-            editorText = editor?.document?.text,
-            fileText = file?.let { FileDocumentManager.getInstance().getDocument(it)?.text },
+            selectedText = selectedText,
+            editorText = editorText,
+            fileText = fileText,
         ) ?: return
+        val wholeFileText = editorText ?: fileText ?: text
+        val isSelection = isTranslationSelection(selectedText)
         ApplicationManager.getApplication().executeOnPooledThread {
             val chunks = estimateChunkCount(text, InputFormat.MARKDOWN)
             ApplicationManager.getApplication().invokeLater {
@@ -55,7 +66,7 @@ internal class TranslateMarkdownAction : AnAction() {
                     if (!confirmed) return@invokeLater
                 }
                 ToolWindowManager.getInstance(project).getToolWindow("GenTrans")?.show {
-                    GentransToolWindowPanel.getInstance(project).startTranslation(file, text)
+                    GentransToolWindowPanel.getInstance(project).startTranslation(file, text, wholeFileText, isSelection)
                 }
             }
         }

@@ -43,6 +43,25 @@ Google, Anthropic, Meta, Alibaba, OpenRouter, Ollama) and follows clean architec
 ./gradlew test --tests "*UseCaseTest"
 ```
 
+### Lint and Format
+
+- CI enforces ktlint on every module, including `gentrans-idea-plugin`. Run the check before reporting a change as done.
+- Fix violations with the format command instead of editing by hand.
+
+```bash
+# Check style the way CI does
+./gradlew ktlintCheck :gentrans-core:ktlintCheck :gentrans-cli:ktlintCheck :gentrans-idea-plugin:ktlintCheck
+
+# Auto-fix style violations in all modules
+./gradlew ktlintFormat
+
+# Auto-fix a single module
+./gradlew :gentrans-idea-plugin:ktlintFormat
+```
+
+- CI runs only core and cli tests (`:gentrans-core:test :gentrans-cli:test`) with `CI=true`, which excludes the
+  Ollama-based `integration` tests. Set `CI=true` to reproduce it locally.
+
 ### Development Guidelines
 
 - Use `./gradlew installDist` when checking builds

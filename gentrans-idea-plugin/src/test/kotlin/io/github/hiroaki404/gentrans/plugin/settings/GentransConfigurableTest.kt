@@ -1,10 +1,16 @@
 package io.github.hiroaki404.gentrans.plugin.settings
 
+import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
+import io.github.hiroaki404.gentrans.plugin.GentransBundle
+import io.github.hiroaki404.gentrans.plugin.translation.CachedTranslation
+import io.github.hiroaki404.gentrans.plugin.translation.TranslationCacheStore
 import org.junit.Assert.assertEquals
 import java.awt.Container
+import javax.swing.JButton
 import javax.swing.JComboBox
 import javax.swing.JComponent
+import javax.swing.JLabel
 
 class GentransConfigurableTest : BasePlatformTestCase() {
     fun testCreatingAndResettingThePanelDoesNotThrowWhenTheStoredProviderIsUnsupported() {
@@ -38,6 +44,45 @@ class GentransConfigurableTest : BasePlatformTestCase() {
         }
     }
 
+    fun testClearingCacheDoesNotModifySettings() {
+        val store = FakeTranslationCacheStore()
+        val configurable = GentransConfigurable(store)
+        val component = configurable.createComponent()
+        configurable.reset()
+
+        assertFalse(configurable.isModified())
+        findComponent<JButton>(component) {
+            it.text == GentransBundle.message("gentrans.settings.clearCache")
+        }.doClick()
+
+        assertEquals(1, store.clearCount)
+        assertFalse(configurable.isModified())
+        assertTrue(
+            findComponent<JLabel>(component) {
+                it.text == GentransBundle.message("gentrans.settings.cacheCleared")
+            }.isVisible
+        )
+    }
+
+    fun testApplyAndResetPreserveCacheGeneration() {
+        val settings = GentransSettings.getInstance()
+        val original = settings.state
+        try {
+            settings.loadState(GentransSettings.State(cacheGeneration = 4))
+            val configurable = GentransConfigurable(FakeTranslationCacheStore())
+            configurable.createComponent()
+            configurable.reset()
+            settings.state.cacheGeneration = 5
+
+            configurable.apply()
+            configurable.reset()
+
+            assertEquals(5, settings.state.cacheGeneration)
+        } finally {
+            settings.loadState(original)
+        }
+    }
+
     private fun findProviderComboBox(component: JComponent): JComboBox<*> {
         if (component is JComboBox<*>) return component
         if (component is Container) {
@@ -48,5 +93,29 @@ class GentransConfigurableTest : BasePlatformTestCase() {
             }
         }
         error("Provider combo box not found")
+    }
+
+    private inline fun <reified T : JComponent> findComponent(
+        component: JComponent,
+        predicate: (T) -> Boolean,
+    ): T = allComponents(component).filterIsInstance<T>().firstOrNull(predicate)
+        ?: error("${T::class.simpleName} not found")
+
+    private fun allComponents(component: JComponent): Sequence<JComponent> = sequence {
+        yield(component)
+        if (component is Container) {
+            component.components.filterIsInstance<JComponent>().forEach { yieldAll(allComponents(it)) }
+        }
+    }
+
+    private class FakeTranslationCacheStore : TranslationCacheStore {
+        var clearCount = 0
+
+        override fun get(file: VirtualFile): CachedTranslation? = null
+        override fun put(file: VirtualFile, entry: CachedTranslation) = Unit
+        override fun clearAll() {
+            clearCount++
+        }
+        override fun currentGeneration(): Long = 0
     }
 }

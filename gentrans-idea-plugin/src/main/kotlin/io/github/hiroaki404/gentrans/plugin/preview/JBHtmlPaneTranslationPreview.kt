@@ -2,6 +2,7 @@ package io.github.hiroaki404.gentrans.plugin.preview
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.colors.EditorColorsManager
+import com.intellij.openapi.util.text.StringUtil
 import com.intellij.ui.components.JBHtmlPane
 import com.intellij.ui.components.JBHtmlPaneConfiguration
 import com.intellij.ui.components.JBHtmlPaneStyleConfiguration
@@ -39,12 +40,15 @@ internal class JBHtmlPaneTranslationPreview : TranslationPreview {
         wrapper.add(JBScrollPane(htmlPane), PREVIEW)
     }
 
-    override fun render(markdown: String) {
+    override fun render(markdown: String, notice: String?) {
         val requested = generation.incrementAndGet()
         ApplicationManager.getApplication().executeOnPooledThread {
             val flavour = GFMFlavourDescriptor()
             val tree = MarkdownParser(flavour).buildMarkdownTreeFromString(markdown)
-            val html = "<html>${HtmlGenerator(markdown, tree, flavour).generateHtml()}</html>"
+            val banner = notice?.let {
+                "<div class=\"translation-notice\">${it.lines().joinToString("<br/>") { line -> StringUtil.escapeXmlEntities(line) }}</div>"
+            }.orEmpty()
+            val html = "<html>$banner${HtmlGenerator(markdown, tree, flavour).generateHtml()}</html>"
             ApplicationManager.getApplication().invokeLater {
                 if (generation.get() == requested) {
                     htmlPane.text = html
@@ -93,6 +97,7 @@ internal fun createConfiguredJBHtmlPane(): JBHtmlPane = JBHtmlPane(
 
 internal fun translationPreviewStyleSheet(): String = """
     body { margin-left: 8px; }
+    .translation-notice { padding: 8px; margin-bottom: 8px; border: 1px solid; }
     blockquote { padding-left: 8px; }
     table { border-collapse: collapse; }
     th, td { border: 1px solid; }

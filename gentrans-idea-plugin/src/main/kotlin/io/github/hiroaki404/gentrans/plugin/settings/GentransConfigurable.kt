@@ -2,7 +2,9 @@ package io.github.hiroaki404.gentrans.plugin.settings
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
+import com.intellij.openapi.components.serviceIfCreated
 import com.intellij.openapi.options.BoundConfigurable
+import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.ui.DialogPanel
 import com.intellij.ui.dsl.builder.Row
 import com.intellij.ui.dsl.builder.bindItem
@@ -11,12 +13,21 @@ import com.intellij.ui.dsl.builder.columns
 import com.intellij.ui.dsl.builder.panel
 import io.github.hiroaki404.gentrans.core.api.Provider
 import io.github.hiroaki404.gentrans.plugin.GentransBundle
+import io.github.hiroaki404.gentrans.plugin.translation.FileAttributeTranslationCacheStore
+import io.github.hiroaki404.gentrans.plugin.translation.GentransToolWindowPanel
+import io.github.hiroaki404.gentrans.plugin.translation.TranslationCacheStore
+import javax.swing.JLabel
 import javax.swing.JPasswordField
 
-internal class GentransConfigurable : BoundConfigurable(GentransBundle.message("gentrans.settings.displayName")) {
+internal class GentransConfigurable @JvmOverloads constructor(
+    private val store: TranslationCacheStore = FileAttributeTranslationCacheStore.getInstance(),
+) : BoundConfigurable(GentransBundle.message("gentrans.settings.displayName")) {
     private val settings get() = GentransSettings.getInstance().state
     private val apiKeyStore: ApiKeyStore = PasswordSafeApiKeyStore()
     private val apiKeyField = JPasswordField(40)
+    private val cacheClearedLabel = JLabel(GentransBundle.message("gentrans.settings.cacheCleared")).apply {
+        isVisible = false
+    }
 
     private var currentProvider = resolveSupportedProviderOrDefault(settings.provider)
     private val loadedApiKeys = mutableMapOf<Provider, String>()
@@ -59,6 +70,16 @@ internal class GentransConfigurable : BoundConfigurable(GentransBundle.message("
             }
             ollamaBaseUrlRow = row(GentransBundle.message("gentrans.settings.ollamaBaseUrl")) {
                 textField().bindText(settings::ollamaBaseUrl).columns(20)
+            }
+            row {
+                button(GentransBundle.message("gentrans.settings.clearCache")) {
+                    store.clearAll()
+                    cacheClearedLabel.isVisible = true
+                    ProjectManager.getInstance().openProjects.filterNot { it.isDisposed }.forEach { project ->
+                        project.serviceIfCreated<GentransToolWindowPanel>()?.onCacheCleared()
+                    }
+                }
+                cell(cacheClearedLabel)
             }
         }
         applyProviderVisibility()

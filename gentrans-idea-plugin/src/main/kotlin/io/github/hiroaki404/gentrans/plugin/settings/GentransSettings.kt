@@ -19,6 +19,7 @@ internal class GentransSettings : PersistentStateComponent<GentransSettings.Stat
         var nativeLanguage: String = "Japanese",
         var secondLanguage: String = "English",
         var ollamaBaseUrl: String = "",
+        var cacheGeneration: Long = 0,
     )
 
     private var state = State()

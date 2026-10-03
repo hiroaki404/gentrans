@@ -63,6 +63,12 @@ class TranslateMarkdownActionTest : BasePlatformTestCase() {
         )
     }
 
+    fun testSelectionFlagRequiresNonEmptyText() {
+        assertTrue(isTranslationSelection("selected"))
+        assertFalse(isTranslationSelection(""))
+        assertFalse(isTranslationSelection(null))
+    }
+
     fun testIsMarkdownFileTypeMatchesOnlyTheMarkdownFileType() {
         assertTrue(isMarkdownFileType(StubFileType(MARKDOWN_FILE_TYPE_NAME)))
         assertFalse(isMarkdownFileType(StubFileType("PLAIN_TEXT")))

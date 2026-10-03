@@ -82,6 +82,9 @@ dependencies {
 }
 
 intellijPlatform {
+    // Keep the runIde/runIdea sandbox settings across clean.
+    sandboxContainer = layout.projectDirectory.dir(".idea-sandbox")
+
     // Booting a sandbox IDE to index the Settings UI instantiates every registered action too
     // (noisy Android Studio SEVERE logs, unrelated to us); revisit once that's no longer true.
     buildSearchableOptions = false
